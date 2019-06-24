@@ -1,0 +1,14 @@
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea
+.idea/
+.lib
+.scannerwork
+*.scannerwork
+*.sonar_lock
+*.iws
+*.iml
+*.ipr
+*.ini
