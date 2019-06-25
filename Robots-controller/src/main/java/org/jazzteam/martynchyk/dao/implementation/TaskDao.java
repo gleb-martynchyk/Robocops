@@ -12,7 +12,10 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 import org.jazzteam.martynchyk.tasks.BaseTask;
 
+import java.util.List;
+
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.in;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
@@ -40,6 +43,10 @@ public class TaskDao {
         getCollection().deleteOne(eq("_id", id));
     }
 
+    public void deleteMany(List<Long> ids) {
+        getCollection().deleteMany(in("_id", ids));
+    }
+
     private MongoCollection<BaseTask> getCollection() {
         CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 fromProviders(PojoCodecProvider.builder().automatic(true).build()));
@@ -52,4 +59,6 @@ public class TaskDao {
         MongoDatabase database = client.getDatabase("Robocops");
         return database.getCollection("tasks", BaseTask.class);
     }
+
+
 }

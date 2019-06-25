@@ -92,7 +92,7 @@ public class TaskDaoTest {
     }
 
     @Test
-    public void testFindAllCities() {
+    public void testFindAllAndDelete() {
         BaseTask taskA = new BaseTask();
         BaseTask taskB = new BaseTask();
         BaseTask taskC = new BaseTask();
@@ -107,5 +107,11 @@ public class TaskDaoTest {
         tasksExpected.add(taskC);
 
         Assert.assertEquals(taskDao.findAll(), tasksExpected);
+
+        List<Long> ids = new ArrayList<>();
+        for (BaseTask task : tasksExpected) {
+            ids.add(task.getId());
+        }
+        taskDao.deleteMany(ids);
     }
 }
