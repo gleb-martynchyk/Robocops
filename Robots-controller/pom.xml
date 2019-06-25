@@ -11,4 +11,18 @@
 
     <artifactId>Robots-controller</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>3.10.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jazzteam.martynchyk</groupId>
+            <artifactId>Robots-model</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
 </project>
