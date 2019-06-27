@@ -4,5 +4,5 @@ import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.jazzteam.martynchyk.tasks.BaseTask;
 
 @BsonDiscriminator
-public class PatrolRoadsAndHighwaysTask extends BaseTask {
+public class KillYourSelfTask extends BaseTask {
 }

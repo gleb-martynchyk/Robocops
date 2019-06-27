@@ -4,6 +4,7 @@ import org.jazzteam.martynchyk.dao.implementation.TaskDao;
 import org.jazzteam.martynchyk.tasks.BaseTask;
 import org.jazzteam.martynchyk.tasks.TaskPriority;
 import org.jazzteam.martynchyk.tasks.TaskStatus;
+import org.jazzteam.martynchyk.tasks.implementation.GuardTask;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -25,12 +26,27 @@ public class TaskDaoTest {
         taskDao = new TaskDao();
     }
 
+
+    @Test(dataProviderClass = TaskDaoDataSource.class, dataProvider = "TasksAndPriorityTask")
+    public void testFindParametrized(List<BaseTask> tasks) {
+        for (BaseTask task : tasks) {
+            taskDao.create(task);
+        }
+        expectedTask = tasks.get(0);
+
+        assertEquals(expectedTask, taskDao.findPriority());
+
+        for (BaseTask task : tasks) {
+            taskDao.deleteById(task.getId());
+        }
+    }
+
     @Test
     public void testDeleteById() {
         expectedTask = new BaseTask();
         expectedTask.setDescription("Arrest Johnny");
         expectedTask.setTaskPriority(TaskPriority.LOW);
-        expectedTask.setTaskStatus(TaskStatus.CREATED);
+        expectedTask.setStatus(TaskStatus.CREATED);
         taskDao.create(expectedTask);
         taskDao.deleteById(expectedTask.getId());
         assertFalse(taskDao.findAll().iterator().hasNext());
@@ -42,7 +58,7 @@ public class TaskDaoTest {
     }
 
     @Test
-    public void testFindTaskDoesntExist() {
+    public void testFindNotExistingTask() {
         expectedTask = new BaseTask();
         assertNull(taskDao.findById(expectedTask.getId()));
     }
@@ -52,7 +68,21 @@ public class TaskDaoTest {
         expectedTask = new BaseTask();
         expectedTask.setDescription("Arrest Johnny");
         expectedTask.setTaskPriority(TaskPriority.LOW);
-        expectedTask.setTaskStatus(TaskStatus.CREATED);
+        expectedTask.setStatus(TaskStatus.CREATED);
+
+        taskDao.create(expectedTask);
+        BaseTask actualTask = taskDao.findById(expectedTask.getId());
+        assertEquals(actualTask, expectedTask);
+        taskDao.deleteById(expectedTask.getId());
+    }
+
+    //TODO исправить, чтобы наследники так же могли возращаться с бд
+    @Test
+    public void testCreateAndFindGuardTask() {
+        expectedTask = new GuardTask();
+        expectedTask.setDescription("Arrest Johnny");
+        expectedTask.setTaskPriority(TaskPriority.LOW);
+        expectedTask.setStatus(TaskStatus.CREATED);
 
         taskDao.create(expectedTask);
         BaseTask actualTask = taskDao.findById(expectedTask.getId());
@@ -65,7 +95,7 @@ public class TaskDaoTest {
         expectedTask = new BaseTask();
         expectedTask.setDescription("Arrest Johnny");
         expectedTask.setTaskPriority(TaskPriority.LOW);
-        expectedTask.setTaskStatus(TaskStatus.CREATED);
+        expectedTask.setStatus(TaskStatus.CREATED);
         taskDao.create(expectedTask);
 
         taskDao.update(expectedTask);
@@ -79,12 +109,12 @@ public class TaskDaoTest {
         expectedTask = new BaseTask();
         expectedTask.setDescription("Arrest Johnny");
         expectedTask.setTaskPriority(TaskPriority.LOW);
-        expectedTask.setTaskStatus(TaskStatus.CREATED);
+        expectedTask.setStatus(TaskStatus.CREATED);
         taskDao.create(expectedTask);
 
         expectedTask.setDescription("Updated description");
         expectedTask.setTaskPriority(TaskPriority.HIGH);
-        expectedTask.setTaskStatus(TaskStatus.DONE);
+        expectedTask.setStatus(TaskStatus.DONE);
         taskDao.update(expectedTask);
         BaseTask actualTask = taskDao.findById(expectedTask.getId());
         assertEquals(actualTask, expectedTask);

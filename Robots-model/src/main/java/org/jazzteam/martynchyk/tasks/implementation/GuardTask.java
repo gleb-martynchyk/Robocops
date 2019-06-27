@@ -1,4 +1,10 @@
 package org.jazzteam.martynchyk.tasks.implementation;
 
-public class GuardTask {
+import lombok.Data;
+import org.bson.codecs.pojo.annotations.BsonDiscriminator;
+import org.jazzteam.martynchyk.tasks.BaseTask;
+
+@Data
+@BsonDiscriminator
+public class GuardTask extends BaseTask {
 }

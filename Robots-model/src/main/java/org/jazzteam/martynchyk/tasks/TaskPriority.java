@@ -1,8 +1,17 @@
 package org.jazzteam.martynchyk.tasks;
 
 public enum TaskPriority {
-    //add elements by weight
-    HIGH,
-    MIDDLE,
-    LOW
+    HIGH(2),
+    MIDDLE(1),
+    LOW(0);
+
+    public int priority;
+
+    TaskPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
 }
