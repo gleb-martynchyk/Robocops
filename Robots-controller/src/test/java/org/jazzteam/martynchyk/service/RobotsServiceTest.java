@@ -6,17 +6,22 @@ import org.jazzteam.martynchyk.robots.BaseRobot;
 import org.jazzteam.martynchyk.robots.Robot;
 import org.jazzteam.martynchyk.service.implementation.TaskService;
 import org.jazzteam.martynchyk.tasks.BaseTask;
+import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.*;
+import static org.testng.AssertJUnit.assertEquals;
 
 
 @WebAppConfiguration
@@ -48,11 +53,43 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         assertFalse(robotsService.getRobots().contains(robot));
     }
 
+
+    //TODO доделать чтобы изменения сохранялись в бд
+    @Ignore
+    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
+    public void testStartExecution_TwoRobotsExecuteAllTasks(List<BaseTask> baseTasks) {
+        BaseRobot robot1 = new BaseRobot();
+        BaseRobot robot2 = new BaseRobot();
+        robotsService.addRobot(robot1);
+        robotsService.addRobot(robot2);
+
+        for (BaseTask task : baseTasks) {
+            task.setDifficultyMilliseconds(1);
+            robot1.getAllowedTasks().add(task.getClass());
+            robot2.getAllowedTasks().add(task.getClass());
+            taskService.create(task);
+        }
+
+        //start method startExecution in other thread
+        Runnable task = robotsService::startExecution;
+        Thread thread = new Thread(task);
+        thread.start();
+        try {
+            TimeUnit.SECONDS.sleep(1);
+            robotsService.stopExecution();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+//        robotsService.startExecution();
+
+        int doneTaskAmount = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.DONE))
+                .count();
+
+        assertEquals(doneTaskAmount, baseTasks.size());
+    }
+
     //TODO потом дописать
-//    @Test
-//    public void testStartExecution() {
-//    }
-//
 //    @Test
 //    public void testStopExecution() {
 //    }
@@ -126,15 +163,18 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robot1.getAllowedTasks().add(task.getClass());
         BaseRobot robot2 = new BaseRobot();
         BaseRobot robot3 = new BaseRobot();
+
         Set<Robot> robotSet = new HashSet<>();
         robotSet.add(robot1);
         robotSet.add(robot2);
         robotSet.add(robot3);
 
-        Set<Robot> actualSet = new HashSet<>();
-        actualSet.add(robot1);
+        Set<Robot> actualSet = robotsService.sendTask(robotSet);
 
-        assertEquals(robotsService.sendTask(robotSet), actualSet);
+        Set<Robot> expectedSet = new HashSet<>();
+        expectedSet.add(robot1);
+
+        assertEquals(expectedSet, actualSet);
         taskService.deleteById(task.getId());
     }
 

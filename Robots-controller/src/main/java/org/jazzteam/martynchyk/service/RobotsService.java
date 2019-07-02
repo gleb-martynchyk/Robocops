@@ -2,13 +2,17 @@ package org.jazzteam.martynchyk.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.jazzteam.martynchyk.robots.BaseRobot;
 import org.jazzteam.martynchyk.robots.Report;
 import org.jazzteam.martynchyk.robots.Robot;
 import org.jazzteam.martynchyk.service.implementation.TaskService;
+import org.jazzteam.martynchyk.tasks.BaseTask;
 import org.jazzteam.martynchyk.tasks.Task;
+import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -39,10 +43,12 @@ public class RobotsService {
 
     public void startExecution() {
         running = true;
-        while (running && taskService.hasNextToExecute()) {
-            sendTask();
+        while (running) {
+            if (taskService.hasNextToExecute()) {
+                sendTask();
+            }
             try {
-                TimeUnit.MILLISECONDS.sleep(300);
+                TimeUnit.MILLISECONDS.sleep(30);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -58,17 +64,19 @@ public class RobotsService {
     }
 
     public Robot sendTask() {
-        Task nextTask = taskService.findNext();
+        BaseTask nextTask = taskService.findNext();
         if (nextTask == null) {
             return null;
         }
         AtomicReference<Robot> robotToExecuteTask = new AtomicReference<>();
         robots.stream()
                 .filter(robot -> robot.canExecute(nextTask))
-                .findAny()
+                .min(Comparator.comparingInt(o -> ((BaseRobot) o).getTaskQueue().size()))
                 .ifPresent(robot -> {
                             robot.addTask(nextTask);
                             robotToExecuteTask.set(robot);
+                            nextTask.setStatus(TaskStatus.ASSIGNED);
+                            taskService.update(nextTask);
                         }
                 );
         //TODO должны ли роботы автоматически создаваться, если не хватает?
@@ -76,18 +84,20 @@ public class RobotsService {
     }
 
     public Robot sendTask(Robot robot) {
-        Task nextTask = taskService.findNext();
+        BaseTask nextTask = taskService.findNext();
         if (nextTask == null) {
             return null;
         }
         robot.addTask(nextTask);
+        nextTask.setStatus(TaskStatus.ASSIGNED);
+        taskService.update(nextTask);
         return robot;
     }
 
     // добавить ко всем в очередь, выполнит первый кто приступит
     //TODO написать тесты, когда один таск в очереди у нескольких роботов, и только один его обработает
     public Set<Robot> sendTask(Set<Robot> robots) {
-        Task nextTask = taskService.findNext();
+        BaseTask nextTask = taskService.findNext();
         if (nextTask == null) {
             return null;
         }
@@ -97,6 +107,8 @@ public class RobotsService {
                 robotsThatGetTask.add(robot);
             }
         }
+        nextTask.setStatus(TaskStatus.ASSIGNED);
+        taskService.update(nextTask);
         return robotsThatGetTask;
     }
 }

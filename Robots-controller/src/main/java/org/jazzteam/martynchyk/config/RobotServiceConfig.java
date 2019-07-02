@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Scope;
 @ComponentScan(basePackages = "org.jazzteam.martynchyk.config")
 public class RobotServiceConfig {
     @Bean
-    @Scope("singleton")
+//    @Scope("prototype")
     public RobotsService robotsService() {
         return new RobotsService();
     }

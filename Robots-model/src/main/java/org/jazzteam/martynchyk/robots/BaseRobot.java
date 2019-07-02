@@ -59,7 +59,7 @@ public class BaseRobot implements Robot {
 
     @Override
     public boolean addTask(Task task) {
-        if (canExecute(task) && !((BaseTask) task).getStatus().equals(TaskStatus.DONE)) {
+        if (canExecute(task) && ((BaseTask) task).getStatus().equals(TaskStatus.CREATED) && !taskQueue.contains(task)) {
             return taskQueue.offer(task);
         } else return false;
     }
@@ -81,7 +81,9 @@ public class BaseRobot implements Robot {
         //TODO вызывает interruptedException
         synchronized (nextTask) {
             while (!nextTask.getStatus().equals(TaskStatus.CREATED)) {
-                nextTask = (BaseTask) taskQueue.poll();
+                if (!taskQueue.isEmpty()) {
+                    nextTask = (BaseTask) taskQueue.poll();
+                } else return null;
             }
             return executeTask(nextTask);
         }
