@@ -62,7 +62,7 @@ public class BaseRobotTest {
         assertTrue(report.getExecutors().contains(robot));
     }
 
-    @Test(timeOut = 2500)
+    @Test(timeOut = 1500)
     public void testExecuteTaskInMultiThread() {
         robot.getAllowedTasks().add(task.getClass());
         robot.addTask(task);
@@ -72,11 +72,11 @@ public class BaseRobotTest {
         robot1.getAllowedTasks().add(task1.getClass());
         robot1.addTask(task1);
 
-        task.setDifficulty(2);
-        task1.setDifficulty(2);
+        task.setDifficulty(1);
+        task1.setDifficulty(1);
 
-        Future<Report> future1 = robot.executeNextTask();
-        Future<Report> future2 = robot1.executeNextTask();
+        Future<Report> future1 = robot.executeTaskFromQueueMultiThread();
+        Future<Report> future2 = robot1.executeTaskFromQueueMultiThread();
         Report report = null;
         Report report1 = null;
 
@@ -90,8 +90,34 @@ public class BaseRobotTest {
             e.printStackTrace();
         }
 
-        assertNotNull(report);
-        assertNotNull(report1);
-        assertEquals(report.getEndDate().getTime(), report1.getEndDate().getTime(),50);
+        assertEquals(report.getStartDate().getTime(), report1.getStartDate().getTime(), 50);
+    }
+
+    @Test
+    public void testExecuteTaskCantExecuteTwoTasksAtOneMoment() {
+        BaseTask task1 = new GuardTask();
+        robot.getAllowedTasks().add(task.getClass());
+        robot.addTask(task);
+        robot.addTask(task1);
+
+        task.setDifficulty(2);
+        task1.setDifficulty(3);
+
+        Future<Report> future1 = robot.executeTaskFromQueueMultiThread();
+        Future<Report> future2 = robot.executeTaskFromQueueMultiThread();
+        Report report = null;
+        Report report1 = null;
+
+        try {
+            report = future1.get();
+            report1 = future2.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        assertEquals(Math.abs(report.getEndDate().getTime() - report1.getEndDate().getTime()),
+                task1.getDifficulty() * 1e3, 50);
     }
 }

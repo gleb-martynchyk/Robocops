@@ -6,7 +6,7 @@ import org.bson.conversions.Bson;
 public interface BaseDao<T> {
     T create(T object);
 
-//    T findPriority(Bson filter);
+//    T findNext(Bson filter);
 
     T findById(long id);
 

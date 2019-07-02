@@ -1,12 +1,16 @@
 package org.jazzteam.martynchyk.dao;
 
+import org.jazzteam.martynchyk.config.TaskDaoConfig;
 import org.jazzteam.martynchyk.dao.implementation.TaskDao;
 import org.jazzteam.martynchyk.tasks.BaseTask;
 import org.jazzteam.martynchyk.tasks.TaskPriority;
 import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.jazzteam.martynchyk.tasks.implementation.GuardTask;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -16,15 +20,13 @@ import static org.testng.Assert.assertNull;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 
-public class TaskDaoTest {
+@WebAppConfiguration
+@ContextConfiguration(classes = {TaskDaoConfig.class})
+public class TaskDaoTest extends AbstractTestNGSpringContextTests {
 
+    @Autowired
     private TaskDao taskDao;
     private BaseTask expectedTask;
-
-    @BeforeMethod
-    public void setUp() {
-        taskDao = new TaskDao();
-    }
 
 
     @Test(dataProviderClass = TaskDaoDataSource.class, dataProvider = "TasksAndPriorityTask")
@@ -34,7 +36,7 @@ public class TaskDaoTest {
         }
         expectedTask = tasks.get(0);
 
-        assertEquals(expectedTask, taskDao.findPriority());
+        assertEquals(expectedTask, taskDao.findNext());
 
         for (BaseTask task : tasks) {
             taskDao.deleteById(task.getId());
@@ -76,7 +78,6 @@ public class TaskDaoTest {
         taskDao.deleteById(expectedTask.getId());
     }
 
-    //TODO исправить, чтобы наследники так же могли возращаться с бд
     @Test
     public void testCreateAndFindGuardTask() {
         expectedTask = new GuardTask();

@@ -36,6 +36,7 @@ public class BaseTaskTest {
         task.setTaskPriority(TaskPriority.LOW);
         task.setDescription("Patrol the city");
         Report report = task.execute();
+        assertNotNull(report.getTask());
         assertNotNull(report.getEndDate());
         assertNotNull(report.getStartDate());
         assertNotNull(report.getExecutors());

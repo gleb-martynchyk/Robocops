@@ -6,7 +6,6 @@ import org.jazzteam.martynchyk.IdGenerator;
 import org.jazzteam.martynchyk.robots.Report;
 
 import java.util.Date;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Data
@@ -20,10 +19,10 @@ public class BaseTask implements Task {
     private int difficulty;
 
     public BaseTask() {
-        this.id = IdGenerator.generateUniqueId();
-        this.taskPriority = TaskPriority.LOW;
-        this.status = TaskStatus.CREATED;
-        this.createDate = new Date();
+        id = IdGenerator.generateUniqueId();
+        taskPriority = TaskPriority.LOW;
+        status = TaskStatus.CREATED;
+        createDate = new Date();
         difficulty = 5;
     }
 
@@ -37,18 +36,17 @@ public class BaseTask implements Task {
 
     @Override
     public Report execute() {
+        Report report = new Report();
+        report.setStartDate(new Date());
+        report.setTask(this);
         this.setStatus(TaskStatus.INPROCESS);
         try {
-            Random random = new Random();
-//            TimeUnit.SECONDS.sleep(5 + random.nextInt(5));
             TimeUnit.SECONDS.sleep(difficulty);
         } catch (InterruptedException e) {
             System.out.println("Was interrupted");
         }
         this.setStatus(TaskStatus.DONE);
-        Report report = new Report();
         report.setEndDate(new Date());
-        report.setStartDate(this.createDate);
         return report;
     }
 }
