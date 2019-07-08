@@ -20,7 +20,7 @@ public class BaseRobot implements Robot {
     private String name;
     private Set<Class> allowedTasks;
     private Queue<Task> taskQueue;
-    private Set<Report> reports;
+    private Set<Future<Report>> futureReports;
     private boolean running;
     private static Logger log = LogManager.getLogger(BaseRobot.class);
 
@@ -28,24 +28,38 @@ public class BaseRobot implements Robot {
         id = IdGenerator.generateUniqueId();
         taskQueue = new LinkedList<>();
         allowedTasks = new HashSet<>();
-        reports = new HashSet<>();
+        futureReports = new HashSet<>();
     }
 
 
     @Override
     public void startExecution() {
         running = true;
-        while (!taskQueue.isEmpty() && running) {
+        new Thread(() -> {
+            while (running) {
+                executeAllFromQueue();
+                try {
+                    TimeUnit.MILLISECONDS.sleep(30);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    public void executeAllFromQueue() {
+        while (!taskQueue.isEmpty()) {
+            //TODO в дальнейшем добавить заполнение futureReports множества во все методы типа execute
+            Future<Report> report = executeTaskFromQueueMultiThread();
+            futureReports.add(report);
             try {
-                //TODO в дальнейшем добавить заполнение reports множества во все методы типа execute
-                Future<Report> report = executeTaskFromQueueMultiThread();
-                reports.add(report.get());
-                TimeUnit.MILLISECONDS.sleep(300);
-            } catch (InterruptedException | ExecutionException e) {
+                TimeUnit.MILLISECONDS.sleep(30);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
+
 
     @Override
     public void stopExecution() {
@@ -59,15 +73,17 @@ public class BaseRobot implements Robot {
 
     @Override
     public boolean addTask(Task task) {
-        if (canExecute(task) && ((BaseTask) task).getStatus().equals(TaskStatus.CREATED) && !taskQueue.contains(task)) {
-            return taskQueue.offer(task);
-        } else return false;
+        synchronized (taskQueue) {
+            if (canExecute(task) && ((BaseTask) task).getStatus().equals(TaskStatus.CREATED) && !taskQueue.contains(task)) {
+                return taskQueue.offer(task);
+            } else return false;
+        }
     }
 
     public Report executeTask(Task task) {
         Report report = task.execute();
         log.info(Thread.currentThread().getName() + " - task complete");
-        report.getExecutors().add(this);
+        report.setExecutor(this);
         return report;
     }
 
@@ -77,15 +93,16 @@ public class BaseRobot implements Robot {
         if (taskQueue.isEmpty()) {
             return null;
         }
-        BaseTask nextTask = (BaseTask) taskQueue.poll();
-        //TODO вызывает interruptedException
-        synchronized (nextTask) {
-            while (!nextTask.getStatus().equals(TaskStatus.CREATED)) {
-                if (!taskQueue.isEmpty()) {
-                    nextTask = (BaseTask) taskQueue.poll();
-                } else return null;
+        synchronized (taskQueue) {
+            BaseTask nextTask = (BaseTask) taskQueue.poll();
+            synchronized (nextTask) {
+                while (nextTask.getStatus().equals(TaskStatus.DONE)) {
+                    if (!taskQueue.isEmpty()) {
+                        nextTask = (BaseTask) taskQueue.poll();
+                    } else return null;
+                }
+                return executeTask(nextTask);
             }
-            return executeTask(nextTask);
         }
     }
 
@@ -104,11 +121,11 @@ public class BaseRobot implements Robot {
                 running == robot.running &&
                 allowedTasks.equals(robot.allowedTasks) &&
                 taskQueue.equals(robot.taskQueue) &&
-                reports.equals(robot.reports);
+                futureReports.equals(robot.futureReports);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, allowedTasks, taskQueue, reports, running);
+        return Objects.hash(id, name, allowedTasks, taskQueue, futureReports, running);
     }
 }

@@ -27,7 +27,7 @@ public class BaseTask implements Task {
         taskPriority = TaskPriority.LOW;
         status = TaskStatus.CREATED;
         createDate = new Date();
-        difficultyMilliseconds = 5000;
+        difficultyMilliseconds = 3000;
     }
 
     public BaseTask(String description, TaskPriority taskPriority, TaskStatus status, Date createDate) {

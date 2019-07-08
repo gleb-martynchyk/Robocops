@@ -7,15 +7,13 @@ import org.jazzteam.martynchyk.robots.Report;
 import org.jazzteam.martynchyk.robots.Robot;
 import org.jazzteam.martynchyk.service.implementation.TaskService;
 import org.jazzteam.martynchyk.tasks.BaseTask;
-import org.jazzteam.martynchyk.tasks.Task;
 import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,10 +25,13 @@ public class RobotsService {
     private TaskService taskService;
     private Set<Robot> robots;
     private boolean running;
-    private Map<Robot, Report> robotsReports;
+    private Map<Robot, Set<Future<Report>>> robotsFutures;
+    private Map<Robot, Set<Report>> robotsReports;
 
     public RobotsService() {
         this.robots = new HashSet<>();
+        this.robotsFutures = new HashMap<>();
+        this.robotsReports = new HashMap<>();
     }
 
     public boolean addRobot(Robot robot) {
@@ -41,14 +42,65 @@ public class RobotsService {
         return robots.remove(robot);
     }
 
+    private void addReport(Report report) {
+        Robot robot = report.getExecutor();
+        if (robotsReports.containsKey(robot)) {
+            robotsReports.get(robot).add(report);
+        } else {
+            Set<Report> set = new HashSet<>();
+            set.add(report);
+            robotsReports.put(robot, set);
+        }
+    }
+
+    public synchronized void collectReports() {
+        synchronized (robots) {
+            //TODO почему создается несколько однаковых ключей?
+            for (Robot robotToCast : robots) {
+                BaseRobot robot=(BaseRobot) robotToCast;
+                Set<Future<Report>> reports = ((BaseRobot) robot).getFutureReports();
+                if(reports.isEmpty()){
+                    continue;
+                }
+                if (robotsFutures.containsKey(robot)) {
+                    robotsFutures.get(robot).addAll(reports);
+                } else {
+                    robotsFutures.put(robot, reports);
+                }
+            }
+        }
+    }
+
+    public void updateTasksInDatabase() {
+        for (Map.Entry<Robot, Set<Future<Report>>> robotReports : robotsFutures.entrySet()) {
+            Iterator<Future<Report>> iterator = robotReports.getValue().iterator();
+            while (iterator.hasNext()) {
+                Future<Report> future = iterator.next();
+                if (future.isDone()) {
+                    try {
+                        Report report = future.get();
+                        taskService.update((BaseTask) report.getTask());
+                        //TODO тут валилась concurrentException
+                        iterator.remove();
+                        addReport(report);
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
     public void startExecution() {
         running = true;
         while (running) {
             if (taskService.hasNextToExecute()) {
                 sendTask();
             }
+            collectReports();
+            updateTasksInDatabase();
             try {
-                TimeUnit.MILLISECONDS.sleep(30);
+                TimeUnit.MILLISECONDS.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -94,8 +146,6 @@ public class RobotsService {
         return robot;
     }
 
-    // добавить ко всем в очередь, выполнит первый кто приступит
-    //TODO написать тесты, когда один таск в очереди у нескольких роботов, и только один его обработает
     public Set<Robot> sendTask(Set<Robot> robots) {
         BaseTask nextTask = taskService.findNext();
         if (nextTask == null) {

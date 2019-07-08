@@ -12,13 +12,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.testng.Assert.*;
 import static org.testng.AssertJUnit.assertEquals;
@@ -55,13 +53,14 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
 
 
     //TODO доделать чтобы изменения сохранялись в бд
-    @Ignore
+    //TODO чтобы задачи распределялись равномерно
     @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
     public void testStartExecution_TwoRobotsExecuteAllTasks(List<BaseTask> baseTasks) {
         BaseRobot robot1 = new BaseRobot();
         BaseRobot robot2 = new BaseRobot();
         robotsService.addRobot(robot1);
         robotsService.addRobot(robot2);
+        robotsService.startAllRobots();
 
         for (BaseTask task : baseTasks) {
             task.setDifficultyMilliseconds(1);
@@ -72,24 +71,119 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
 
         //start method startExecution in other thread
         Runnable task = robotsService::startExecution;
-        Thread thread = new Thread(task);
-        thread.start();
+        new Thread(task).start();
         try {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(4);
             robotsService.stopExecution();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
 //        robotsService.startExecution();
 
-        int doneTaskAmount = (int) baseTasks.stream()
-                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.DONE))
-                .count();
+        int doneTaskAmount = 0;
+        for (BaseTask task1 : taskService.findAll()) {
+            if (task1.getStatus().equals(TaskStatus.DONE)) {
+                doneTaskAmount++;
+            }
+        }
+//        taskService.deleteMany(baseTasks.stream().map(BaseTask::getId)
+//                .collect(Collectors.toCollection(ArrayList::new)));
 
         assertEquals(doneTaskAmount, baseTasks.size());
     }
 
-    //TODO потом дописать
+
+    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
+    public void testCollectReports(List<BaseTask> baseTasks) {
+        BaseRobot robot1 = new BaseRobot();
+        BaseRobot robot2 = new BaseRobot();
+        robotsService.addRobot(robot1);
+        robotsService.addRobot(robot2);
+
+        Set<BaseTask> robot1Queue = new HashSet<>();
+        Set<BaseTask> robot2Queue = new HashSet<>();
+
+        for (int i = 0; i < baseTasks.size(); i++) {
+            BaseTask task = baseTasks.get(i);
+            task.setDifficultyMilliseconds(1);
+            robot1.getAllowedTasks().add(task.getClass());
+            robot2.getAllowedTasks().add(task.getClass());
+            if (i % 2 == 0) {
+                if (robot1.addTask(task))
+                    robot1Queue.add(task);
+            } else {
+                if (robot2.addTask(task))
+                    robot2Queue.add(task);
+            }
+        }
+
+        robot1.executeAllFromQueue();
+        robot2.executeAllFromQueue();
+
+        robotsService.collectReports();
+        robotsService.collectReports();
+
+        assertEquals(robotsService.getRobotsFutures().get(robot1).size(), robot1Queue.size());
+        assertEquals(robotsService.getRobotsFutures().get(robot2).size(), robot2Queue.size());
+    }
+
+    @Test
+    public void testMapDuplicates() {
+        Robot robot1 = new BaseRobot();
+        Set<Robot> robots=new HashSet<>();
+        robots.add(robot1);
+        Robot robot=robots.iterator().next();
+
+        Map<Robot, Set<String>> map = new HashMap<>();
+        map.put(robot, new HashSet<>());
+        assertTrue(map.containsKey(robot));
+    }
+
+    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
+    public void testUpdateTasksInDatabase(List<BaseTask> baseTasks) {
+        BaseRobot robot1 = new BaseRobot();
+        BaseRobot robot2 = new BaseRobot();
+        robotsService.addRobot(robot1);
+        robotsService.addRobot(robot2);
+
+        Set<BaseTask> robot1Queue = new HashSet<>();
+        Set<BaseTask> robot2Queue = new HashSet<>();
+        Map<BaseTask, Boolean> taskResults = new HashMap<>();
+        for (int i = 0; i < baseTasks.size(); i++) {
+            BaseTask task = baseTasks.get(i);
+            task.setDifficultyMilliseconds(1);
+            robot1.getAllowedTasks().add(task.getClass());
+            robot2.getAllowedTasks().add(task.getClass());
+            taskService.create(task);
+            if (i % 2 == 0) {
+                if (robot1.addTask(task))
+                    robot1Queue.add(task);
+            } else {
+                if (robot2.addTask(task))
+                    robot2Queue.add(task);
+            }
+        }
+        robot1.executeAllFromQueue();
+        robot2.executeAllFromQueue();
+
+        robotsService.collectReports();
+        robotsService.updateTasksInDatabase();
+
+        for (BaseTask task : robot1Queue) {
+            taskResults.put(task, taskService.findById(task.getId()).getStatus() == TaskStatus.DONE);
+        }
+        for (BaseTask task : robot2Queue) {
+            taskResults.put(task, taskService.findById(task.getId()).getStatus() == TaskStatus.DONE);
+        }
+
+        taskService.deleteMany(baseTasks.stream().map(BaseTask::getId)
+                .collect(Collectors.toCollection(ArrayList::new)));
+
+        assertFalse(taskResults.containsValue(false));
+    }
+
+// TODO потом дописать
 //    @Test
 //    public void testStopExecution() {
 //    }
@@ -102,8 +196,8 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         expectedRobot.getAllowedTasks().add(task.getClass());
         robotsService.addRobot(expectedRobot);
         BaseRobot robotActual = (BaseRobot) robotsService.sendTask();
-        assertEquals(robotActual, expectedRobot);
         taskService.deleteById(task.getId());
+        assertEquals(robotActual, expectedRobot);
     }
 
     @Test
@@ -116,8 +210,8 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
     public void testSendTask_ReturnNullWhenNoRobotsToExecuteTask() {
         BaseTask task = new BaseTask();
         taskService.create(task);
-        assertNull(robotsService.sendTask());
         taskService.deleteById(task.getId());
+        assertNull(robotsService.sendTask());
     }
 
     @Test
@@ -128,8 +222,8 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotExpected.getAllowedTasks().add(task.getClass());
         robotsService.addRobot(robotExpected);
         BaseRobot robotActual = (BaseRobot) robotsService.sendTask(robotExpected);
-        assertEquals(robotActual, robotExpected);
         taskService.deleteById(task.getId());
+        assertEquals(robotActual, robotExpected);
     }
 
     @Test
@@ -150,9 +244,9 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotSet.add(robot1);
         robotSet.add(robot2);
         robotSet.add(robot3);
-
-        assertTrue(robotsService.sendTask(robotSet).isEmpty());
+        boolean isEmptyRobotsAssignedSet = robotsService.sendTask(robotSet).isEmpty();
         taskService.deleteById(task.getId());
+        assertTrue(isEmptyRobotsAssignedSet);
     }
 
     @Test
@@ -173,9 +267,9 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
 
         Set<Robot> expectedSet = new HashSet<>();
         expectedSet.add(robot1);
+        taskService.deleteById(task.getId());
 
         assertEquals(expectedSet, actualSet);
-        taskService.deleteById(task.getId());
     }
 
     @Test

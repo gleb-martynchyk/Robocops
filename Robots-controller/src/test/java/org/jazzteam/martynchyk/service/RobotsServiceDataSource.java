@@ -6,7 +6,6 @@ import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.testng.annotations.DataProvider;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 
 public class RobotsServiceDataSource {
@@ -19,9 +18,9 @@ public class RobotsServiceDataSource {
 //                ),
                 Arrays.asList(
                         new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
-//                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
-//                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
-//                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.DONE, new Date(3)),
+                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
+                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.DONE, new Date(3)),
                         new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(4))
                 ),
 //                Arrays.asList(
@@ -40,7 +39,8 @@ public class RobotsServiceDataSource {
 //                Arrays.asList(
 //                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
 //                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(1)),
-//                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
+//                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),
+//                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
 //                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
 //                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
 //                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(3)),

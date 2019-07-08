@@ -1,7 +1,6 @@
 package org.jazzteam.martynchyk.dao;
 
 import com.mongodb.client.result.UpdateResult;
-import org.bson.conversions.Bson;
 
 public interface BaseDao<T> {
     T create(T object);

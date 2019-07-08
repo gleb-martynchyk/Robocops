@@ -40,7 +40,8 @@ public class BaseRobotDataSource {
                 Arrays.asList(
                         new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
                         new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
+                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),
+                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
                         new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
                         new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
                         new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(3)),

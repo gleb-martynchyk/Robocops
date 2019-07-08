@@ -6,13 +6,14 @@ import org.jazzteam.martynchyk.tasks.Task;
 import org.jazzteam.martynchyk.tasks.TaskPriority;
 import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.jazzteam.martynchyk.tasks.implementation.GuardTask;
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -55,7 +56,7 @@ public class BaseRobotTest {
         robot.addTask(new GuardTask());
         robot.addTask(new GuardTask());
         robot.addTask(new GuardTask());
-        assertEquals( 3,robot.getTaskQueue().size());
+        assertEquals(3, robot.getTaskQueue().size());
     }
 
     @Test
@@ -71,7 +72,7 @@ public class BaseRobotTest {
         robot.addTask(task);
         Report report = robot.executeTaskFromQueue();
         assertNotNull(report);
-        assertTrue(report.getExecutors().contains(robot));
+        assertEquals(report.getExecutor(), robot);
     }
 
     @Test(timeOut = 1500)
@@ -163,15 +164,14 @@ public class BaseRobotTest {
     }
 
     @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
-    public void testStartExecution_OneExecuteAllTasks(List<BaseTask> baseTasks) {
-
+    public void testExecuteAllFromQueue_OneExecuteAllTasks(List<BaseTask> baseTasks) {
         for (BaseTask task : baseTasks) {
             task.setDifficultyMilliseconds(1);
             robot.getAllowedTasks().add(task.getClass());
             robot.addTask(task);
         }
 
-        robot.startExecution();
+        robot.executeAllFromQueue();
 
         int doneTaskAmount = (int) baseTasks.stream()
                 .filter(baseTask -> !baseTask.getStatus().equals(TaskStatus.CREATED))
@@ -179,4 +179,84 @@ public class BaseRobotTest {
 
         assertEquals(doneTaskAmount, baseTasks.size());
     }
+
+    @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
+    public void testExecuteAllFromQueue_CollectReports(List<BaseTask> baseTasks) {
+        for (BaseTask task : baseTasks) {
+            task.setDifficultyMilliseconds(1);
+            robot.getAllowedTasks().add(task.getClass());
+            robot.addTask(task);
+        }
+
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
+        robot.executeAllFromQueue();
+
+        int futuresAmount = robot.getFutureReports().size();
+
+        assertEquals(futuresAmount, tasksToExecute);
+    }
+
+    //TODO слишком долго выполняется
+    @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
+    public void testStartExecution_CollectReports(List<BaseTask> baseTasks) {
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
+        for (BaseTask task : baseTasks) {
+            task.setDifficultyMilliseconds(1);
+            robot.getAllowedTasks().add(task.getClass());
+            if (robot.addTask(task))
+                task.setStatus(TaskStatus.ASSIGNED);
+        }
+
+        robot.startExecution();
+
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        int futuresAmount = robot.getFutureReports().size();
+
+        assertEquals(futuresAmount, tasksToExecute);
+    }
+
+    @Test
+    public void testExecuteAllFromQueue_CollectAndCreateReports() {
+        BaseTask task1 = new GuardTask();
+        robot.getAllowedTasks().add(task.getClass());
+        robot.addTask(task);
+        robot.addTask(task1);
+
+        task.setDifficultyMilliseconds(1);
+        task1.setDifficultyMilliseconds(1);
+
+        robot.executeAllFromQueue();
+        Iterator<Future<Report>> iterator = robot.getFutureReports().iterator();
+
+        Future<Report> future1 = iterator.next();
+        Future<Report> future2 = iterator.next();
+        Report report1 = null;
+        Report report2 = null;
+
+        try {
+            report1 = future1.get();
+            report2 = future2.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(report1.getTask(), task1);
+        assertEquals(report1.getExecutor(), robot);
+        assertEquals(report2.getTask(), task);
+    }
+
 }

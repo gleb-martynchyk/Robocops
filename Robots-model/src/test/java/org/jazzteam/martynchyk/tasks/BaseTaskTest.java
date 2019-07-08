@@ -39,6 +39,5 @@ public class BaseTaskTest {
         assertNotNull(report.getTask());
         assertNotNull(report.getEndDate());
         assertNotNull(report.getStartDate());
-        assertNotNull(report.getExecutors());
     }
 }

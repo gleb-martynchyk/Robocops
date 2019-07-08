@@ -33,7 +33,5 @@ public class MainWebAppInitializer implements WebApplicationInitializer {
 
         sc.addFilter("springSecurityFilterChain", new DelegatingFilterProxy("springSecurityFilterChain"))
                 .addMappingForUrlPatterns(null, false, "/*");
-
-
     }
 }
