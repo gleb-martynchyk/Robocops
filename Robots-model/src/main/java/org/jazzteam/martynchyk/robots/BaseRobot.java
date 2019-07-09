@@ -126,6 +126,6 @@ public class BaseRobot implements Robot {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, allowedTasks, taskQueue, futureReports, running);
+        return Objects.hash(id, name, allowedTasks);
     }
 }

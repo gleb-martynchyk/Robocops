@@ -30,8 +30,5 @@ public class MainWebAppInitializer implements WebApplicationInitializer {
 
         FilterRegistration.Dynamic filter = sc.addFilter("hidden-method-filter", new HiddenHttpMethodFilter());
         filter.addMappingForServletNames(null, true, "mvc");
-
-        sc.addFilter("springSecurityFilterChain", new DelegatingFilterProxy("springSecurityFilterChain"))
-                .addMappingForUrlPatterns(null, false, "/*");
     }
 }

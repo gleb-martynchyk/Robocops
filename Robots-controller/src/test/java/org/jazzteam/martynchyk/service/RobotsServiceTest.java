@@ -3,6 +3,7 @@ package org.jazzteam.martynchyk.service;
 import org.jazzteam.martynchyk.config.RobotServiceConfig;
 import org.jazzteam.martynchyk.config.TaskServiceConfig;
 import org.jazzteam.martynchyk.robots.BaseRobot;
+import org.jazzteam.martynchyk.robots.Report;
 import org.jazzteam.martynchyk.robots.Robot;
 import org.jazzteam.martynchyk.service.implementation.TaskService;
 import org.jazzteam.martynchyk.tasks.BaseTask;
@@ -34,6 +35,8 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
     @BeforeMethod
     public void setUp() {
         robotsService.getRobots().clear();
+        robotsService.getRobotsReports().clear();
+        robotsService.getRobotsFutures().clear();
     }
 
     @Test
@@ -55,7 +58,11 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
     //TODO доделать чтобы изменения сохранялись в бд
     //TODO чтобы задачи распределялись равномерно
     @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
-    public void testStartExecution_TwoRobotsExecuteAllTasks(List<BaseTask> baseTasks) {
+    public void testStartExecution_TwoRobotsExecuteAllTasksFromsRobotsService(List<BaseTask> baseTasks) {
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
         BaseRobot robot1 = new BaseRobot();
         BaseRobot robot2 = new BaseRobot();
         robotsService.addRobot(robot1);
@@ -73,24 +80,33 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         Runnable task = robotsService::startExecution;
         new Thread(task).start();
         try {
-            TimeUnit.SECONDS.sleep(4);
-            robotsService.stopExecution();
+            TimeUnit.SECONDS.sleep(7);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+        //TODO нужно поставить таймер с циклом, чтобы ожидать меньше
+//        try {
+//            TimeUnit.MILLISECONDS.sleep(1000);
+//            while (robotsService.numberOfRunningTasks() != 0) {
+//                TimeUnit.MILLISECONDS.sleep(100);
+//            }
+//            robotsService.stopExecution();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
 //        robotsService.startExecution();
 
         int doneTaskAmount = 0;
-        for (BaseTask task1 : taskService.findAll()) {
-            if (task1.getStatus().equals(TaskStatus.DONE)) {
-                doneTaskAmount++;
-            }
+        for (Map.Entry<Robot, Set<Report>> robotReports : robotsService.getRobotsReports().entrySet()) {
+            doneTaskAmount += robotReports.getValue().size();
         }
-//        taskService.deleteMany(baseTasks.stream().map(BaseTask::getId)
-//                .collect(Collectors.toCollection(ArrayList::new)));
+        taskService.deleteMany(baseTasks.stream()
+                .map(BaseTask::getId)
+                .collect(Collectors.toCollection(ArrayList::new)));
 
-        assertEquals(doneTaskAmount, baseTasks.size());
+        assertEquals(tasksToExecute, doneTaskAmount);
     }
 
 
@@ -124,20 +140,16 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotsService.collectReports();
         robotsService.collectReports();
 
-        assertEquals(robotsService.getRobotsFutures().get(robot1).size(), robot1Queue.size());
-        assertEquals(robotsService.getRobotsFutures().get(robot2).size(), robot2Queue.size());
-    }
-
-    @Test
-    public void testMapDuplicates() {
-        Robot robot1 = new BaseRobot();
-        Set<Robot> robots=new HashSet<>();
-        robots.add(robot1);
-        Robot robot=robots.iterator().next();
-
-        Map<Robot, Set<String>> map = new HashMap<>();
-        map.put(robot, new HashSet<>());
-        assertTrue(map.containsKey(robot));
+        if (robot1Queue.isEmpty()) {
+            assertFalse(robotsService.getRobotsFutures().containsKey(robot1));
+        } else {
+            assertEquals(robotsService.getRobotsFutures().get(robot1), robot1.getFutureReports());
+        }
+        if (robot2Queue.isEmpty()) {
+            assertFalse(robotsService.getRobotsFutures().containsKey(robot2));
+        } else {
+            assertEquals(robotsService.getRobotsFutures().get(robot2), robot2.getFutureReports());
+        }
     }
 
     @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")

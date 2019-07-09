@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 @RestController
 @RequestMapping(value = "api/v1/tasks")
 public class TaskController {
@@ -16,10 +20,18 @@ public class TaskController {
         this.taskService = taskService;
     }
 
+    @GetMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public BaseTask get(@PathVariable("id") Long id) {
+        return taskService.findById(id);
+    }
+
+
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Iterable<BaseTask> getAll() {
-        return taskService.findAll();
+    public List<BaseTask> getAll() {
+        return StreamSupport.stream(taskService.findAll().spliterator(), false)
+                .collect(Collectors.toList());
     }
 
     @PostMapping
@@ -29,8 +41,8 @@ public class TaskController {
     }
 
 
-    @GetMapping
-    public String get() {
-        return "hello controller get";
+    @GetMapping(path = "json")
+    public BaseTask get() {
+        return new BaseTask();
     }
 }

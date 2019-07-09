@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -30,8 +31,17 @@ public class RobotsService {
 
     public RobotsService() {
         this.robots = new HashSet<>();
-        this.robotsFutures = new HashMap<>();
-        this.robotsReports = new HashMap<>();
+//        this.robotsFutures = new ConcurrentHashMap<>();
+        this.robotsFutures = Collections.synchronizedMap(new ConcurrentHashMap<>());
+        this.robotsReports = Collections.synchronizedMap(new ConcurrentHashMap<>());
+    }
+
+    public int numberOfRunningTasks() {
+        int doneTaskAmount = 0;
+        for (Map.Entry<Robot, Set<Future<Report>>> robotFutures : getRobotsFutures().entrySet()) {
+            doneTaskAmount += robotFutures.getValue().size();
+        }
+        return doneTaskAmount;
     }
 
     public boolean addRobot(Robot robot) {
@@ -57,34 +67,46 @@ public class RobotsService {
         synchronized (robots) {
             //TODO почему создается несколько однаковых ключей?
             for (Robot robotToCast : robots) {
-                BaseRobot robot=(BaseRobot) robotToCast;
+                BaseRobot robot = (BaseRobot) robotToCast;
                 Set<Future<Report>> reports = ((BaseRobot) robot).getFutureReports();
-                if(reports.isEmpty()){
+                if (reports.isEmpty()) {
                     continue;
+                } else {
+                    //
+                    //robot.getFutureReports().clear();
                 }
                 if (robotsFutures.containsKey(robot)) {
                     robotsFutures.get(robot).addAll(reports);
                 } else {
                     robotsFutures.put(robot, reports);
                 }
+                robotsFutures.containsKey(robot);
             }
         }
     }
 
     public void updateTasksInDatabase() {
-        for (Map.Entry<Robot, Set<Future<Report>>> robotReports : robotsFutures.entrySet()) {
-            Iterator<Future<Report>> iterator = robotReports.getValue().iterator();
-            while (iterator.hasNext()) {
-                Future<Report> future = iterator.next();
-                if (future.isDone()) {
-                    try {
-                        Report report = future.get();
-                        taskService.update((BaseTask) report.getTask());
-                        //TODO тут валилась concurrentException
-                        iterator.remove();
-                        addReport(report);
-                    } catch (InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
+        synchronized (robotsFutures) {
+            Iterator<Map.Entry<Robot, Set<Future<Report>>>> mapIterator = robotsFutures.entrySet().iterator();
+            while (mapIterator.hasNext()) {
+                Iterator<Future<Report>> setIterator = mapIterator.next().getValue().iterator();
+//            for (Map.Entry<Robot, Set<Future<Report>>> robotReports : robotsFutures.entrySet()) {
+//            Iterator<Future<Report>> iterator = robotReports.getValue().iterator();
+
+                while (setIterator.hasNext()) {
+                    //TODO тут валилась concurrentException
+                    Future<Report> future = setIterator.next();
+//                synchronized (future) {
+                    if (future.isDone()) {
+                        try {
+                            //TODO тут валилась concurrentException, чуть что удалить элементы в другом цикле
+                            setIterator.remove();
+                            Report report = future.get();
+                            taskService.update((BaseTask) report.getTask());
+                            addReport(report);
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }

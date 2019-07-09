@@ -11,9 +11,10 @@
 
     <artifactId>Robots-controller</artifactId>
     <packaging>war</packaging>
-    
+
     <properties>
         <spring.version>5.1.6.RELEASE</spring.version>
+        <jackson.version>2.9.9</jackson.version>
     </properties>
 
     <dependencies>
@@ -79,21 +80,34 @@
         </dependency>
 
         <dependency>
-            <groupId>org.thymeleaf</groupId>
-            <artifactId>thymeleaf</artifactId>
-            <version>3.0.11.RELEASE</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.jazzteam.martynchyk</groupId>
             <artifactId>Robots-model</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
-        <finalName>civilization-controller</finalName>
+        <finalName>Robots-controller</finalName>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
             <plugins>
                 <plugin>
