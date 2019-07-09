@@ -102,8 +102,10 @@ public class RobotsService {
                             //TODO тут валилась concurrentException, чуть что удалить элементы в другом цикле
                             setIterator.remove();
                             Report report = future.get();
-                            taskService.update((BaseTask) report.getTask());
-                            addReport(report);
+                            if (report != null) {
+                                taskService.update((BaseTask) report.getTask());
+                                addReport(report);
+                            }
                         } catch (InterruptedException | ExecutionException e) {
                             e.printStackTrace();
                         }

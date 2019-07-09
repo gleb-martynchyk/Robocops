@@ -80,7 +80,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         Runnable task = robotsService::startExecution;
         new Thread(task).start();
         try {
-            TimeUnit.SECONDS.sleep(7);
+            TimeUnit.SECONDS.sleep(8);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -102,6 +102,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         for (Map.Entry<Robot, Set<Report>> robotReports : robotsService.getRobotsReports().entrySet()) {
             doneTaskAmount += robotReports.getValue().size();
         }
+
         taskService.deleteMany(baseTasks.stream()
                 .map(BaseTask::getId)
                 .collect(Collectors.toCollection(ArrayList::new)));
