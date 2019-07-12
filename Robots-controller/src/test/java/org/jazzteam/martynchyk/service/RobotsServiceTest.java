@@ -89,12 +89,12 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         }
 
         Runnable task = robotsService::sendAllTasks;
-        Thread thread=new Thread(task);
+        Thread thread = new Thread(task);
         thread.start();
         TimeUnit.MILLISECONDS.sleep(800);
         robotsService.stopExecution();
         robotsService.stopAllRobots();
-        //thread.interrupt();
+        thread.interrupt();
 
 
         int doneTaskAmount = 0;
@@ -106,12 +106,8 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
                 .map(BaseTask::getId)
                 .collect(Collectors.toCollection(ArrayList::new)));
         if (tasksToExecute < doneTaskAmount) {
-            log.error("отчетов больше чем нужно, роботов:" + robotsService.getRobots().size());
+            log.error("отчетов больше чем нужно: e:" + tasksToExecute + " a:" + doneTaskAmount);
             log.info(robotsService.getRobotsReports());
-        }
-
-        if (tasksToExecute != doneTaskAmount) {
-            log.error("что-то пошло не так");
         }
         assertEquals(tasksToExecute, doneTaskAmount);
     }
