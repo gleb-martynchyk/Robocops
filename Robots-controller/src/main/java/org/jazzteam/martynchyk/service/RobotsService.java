@@ -2,20 +2,20 @@ package org.jazzteam.martynchyk.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jazzteam.martynchyk.robots.BaseRobot;
 import org.jazzteam.martynchyk.robots.Report;
 import org.jazzteam.martynchyk.robots.Robot;
 import org.jazzteam.martynchyk.service.implementation.TaskService;
 import org.jazzteam.martynchyk.tasks.BaseTask;
-import org.jazzteam.martynchyk.tasks.TaskStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
@@ -25,23 +25,13 @@ public class RobotsService {
     @Autowired
     private TaskService taskService;
     private Set<Robot> robots;
-    private boolean running;
-    private Map<Robot, Set<Future<Report>>> robotsFutures;
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private Map<Robot, Set<Report>> robotsReports;
+    private static Logger log = LogManager.getLogger(RobotsService.class);
 
     public RobotsService() {
         this.robots = new HashSet<>();
-//        this.robotsFutures = new ConcurrentHashMap<>();
-        this.robotsFutures = Collections.synchronizedMap(new ConcurrentHashMap<>());
-        this.robotsReports = Collections.synchronizedMap(new ConcurrentHashMap<>());
-    }
-
-    public int numberOfRunningTasks() {
-        int doneTaskAmount = 0;
-        for (Map.Entry<Robot, Set<Future<Report>>> robotFutures : getRobotsFutures().entrySet()) {
-            doneTaskAmount += robotFutures.getValue().size();
-        }
-        return doneTaskAmount;
+        this.robotsReports = new ConcurrentHashMap<>();
     }
 
     public boolean addRobot(Robot robot) {
@@ -50,6 +40,13 @@ public class RobotsService {
 
     public boolean removeRobot(Robot robot) {
         return robots.remove(robot);
+    }
+
+    public BaseRobot findRobotById(Long id) {
+        return (BaseRobot) getRobots().stream()
+                .filter(robot -> ((BaseRobot) robot).getId() == id)
+                .findFirst()
+                .orElse(null);
     }
 
     private void addReport(Report report) {
@@ -63,100 +60,117 @@ public class RobotsService {
         }
     }
 
-    public synchronized void collectReports() {
-        synchronized (robots) {
-            //TODO почему создается несколько однаковых ключей?
-            for (Robot robotToCast : robots) {
-                BaseRobot robot = (BaseRobot) robotToCast;
-                Set<Future<Report>> reports = ((BaseRobot) robot).getFutureReports();
-                if (reports.isEmpty()) {
-                    continue;
-                } else {
-                    //
-                    //robot.getFutureReports().clear();
-                }
-                if (robotsFutures.containsKey(robot)) {
-                    robotsFutures.get(robot).addAll(reports);
-                } else {
-                    robotsFutures.put(robot, reports);
-                }
-                robotsFutures.containsKey(robot);
+    private boolean robotsDone() {
+        return robots.size() == robots.stream()
+                .filter(robot -> ((BaseRobot) robot).getTaskQueue().isEmpty())
+                .count();
+    }
+
+    public void collectReports() {
+        for (Robot robotToCast : robots) {
+            BaseRobot robot = (BaseRobot) robotToCast;
+            Set<Report> reports = null;
+            synchronized (robot.getReports()) {
+                reports = new HashSet<>(robot.getReports());
+            }
+            if (reports.isEmpty()) {
+                continue;
+            }
+            if (robotsReports.containsKey(robot)) {
+                robotsReports.get(robot).addAll(reports);
+            } else {
+                robotsReports.put(robot, reports);
             }
         }
     }
 
     public void updateTasksInDatabase() {
-        synchronized (robotsFutures) {
-            Iterator<Map.Entry<Robot, Set<Future<Report>>>> mapIterator = robotsFutures.entrySet().iterator();
-            while (mapIterator.hasNext()) {
-                Iterator<Future<Report>> setIterator = mapIterator.next().getValue().iterator();
-//            for (Map.Entry<Robot, Set<Future<Report>>> robotReports : robotsFutures.entrySet()) {
-//            Iterator<Future<Report>> iterator = robotReports.getValue().iterator();
-
-                while (setIterator.hasNext()) {
-                    //TODO тут валилась concurrentException
-                    Future<Report> future = setIterator.next();
-//                synchronized (future) {
-                    if (future.isDone()) {
-                        try {
-                            //TODO тут валилась concurrentException, чуть что удалить элементы в другом цикле
-                            setIterator.remove();
-                            Report report = future.get();
-                            if (report != null) {
-                                taskService.update((BaseTask) report.getTask());
-                                addReport(report);
-                            }
-                        } catch (InterruptedException | ExecutionException e) {
-                            e.printStackTrace();
-                        }
-                    }
+        Iterator<Map.Entry<Robot, Set<Report>>> mapIterator = robotsReports.entrySet().iterator();
+        while (mapIterator.hasNext()) {
+            Iterator<Report> setIterator = mapIterator.next().getValue().iterator();
+            while (setIterator.hasNext()) {
+                Report report = setIterator.next();
+                if (report != null) {
+                    taskService.update((BaseTask) report.getTask());
+                    addReport(report);
                 }
             }
         }
     }
 
     public void startExecution() {
-        running = true;
-        while (running) {
+        running.set(true);
+        while (running.get() && !Thread.currentThread().isInterrupted()) {
             if (taskService.hasNextToExecute()) {
-                sendTask();
+                if (sendTask() == null) {
+                    log.warn("Робот не нашелся");
+                }
             }
             collectReports();
             updateTasksInDatabase();
             try {
-                TimeUnit.MILLISECONDS.sleep(500);
+                //TODO Тесты валятся с малым временем 30мс
+                TimeUnit.MILLISECONDS.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                break;
             }
         }
     }
 
+    public void sendAllTasks() {
+        running.set(true);
+        while (running.get() && !Thread.currentThread().isInterrupted()) {
+            if (taskService.hasNextToExecute()) {
+                if (sendTask() == null) {
+                    log.warn("Робот не нашелся");
+                }
+            }
+            collectReports();
+            updateTasksInDatabase();
+        }
+    }
+
+    public Thread startExecutionInThread() {
+        Thread thread = new Thread(this::startExecution);
+        thread.start();
+        return thread;
+    }
+
     public void stopExecution() {
-        running = false;
+        running.set(false);
     }
 
     public void startAllRobots() {
         robots.forEach(Robot::startExecution);
     }
 
-    public Robot sendTask() {
+    public void stopAllRobots() {
+        robots.forEach(Robot::stopExecution);
+    }
+
+    public synchronized Robot sendTask() {
         BaseTask nextTask = taskService.findNext();
         if (nextTask == null) {
             return null;
         }
-        AtomicReference<Robot> robotToExecuteTask = new AtomicReference<>();
-        robots.stream()
-                .filter(robot -> robot.canExecute(nextTask))
-                .min(Comparator.comparingInt(o -> ((BaseRobot) o).getTaskQueue().size()))
-                .ifPresent(robot -> {
-                            robot.addTask(nextTask);
-                            robotToExecuteTask.set(robot);
-                            nextTask.setStatus(TaskStatus.ASSIGNED);
-                            taskService.update(nextTask);
-                        }
-                );
-        //TODO должны ли роботы автоматически создаваться, если не хватает?
-        return robotToExecuteTask.get();
+        synchronized (nextTask) {
+            //TODO тут бывает таск не обновляется в бд, поэтому происходит больше выполнений чем тасков
+            AtomicReference<Robot> robotToExecuteTask = new AtomicReference<>(null);
+            robots.stream()
+                    .filter(robot -> robot.canExecute(nextTask))
+                    .min(Comparator.comparingInt(o -> ((BaseRobot) o).getTaskQueue().size()))
+                    .ifPresent(robot -> {
+                                if (robot.addTask(nextTask)) {
+                                    taskService.update(nextTask);
+                                    robotToExecuteTask.set(robot);
+                                } else {
+                                    log.warn("задача не отправлена");
+                                }
+                            }
+                    );
+            return robotToExecuteTask.get();
+        }
     }
 
     public Robot sendTask(Robot robot) {
@@ -165,7 +179,6 @@ public class RobotsService {
             return null;
         }
         robot.addTask(nextTask);
-        nextTask.setStatus(TaskStatus.ASSIGNED);
         taskService.update(nextTask);
         return robot;
     }
@@ -181,7 +194,6 @@ public class RobotsService {
                 robotsThatGetTask.add(robot);
             }
         }
-        nextTask.setStatus(TaskStatus.ASSIGNED);
         taskService.update(nextTask);
         return robotsThatGetTask;
     }

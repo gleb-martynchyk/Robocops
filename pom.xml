@@ -11,6 +11,7 @@
     <modules>
         <module>Robots-model</module>
         <module>Robots-controller</module>
+        <module>Robots-view</module>
     </modules>
 
     <properties>

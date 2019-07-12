@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:c="http://www.w3.org/1999/XSL/Transform">
+<head>
+    <meta charset="UTF-8">
+    <title>Tasks</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+</head>
+<body>
+<div class="container mt-5">
+
+    <div class="my-auto">
+
+        <h3>Tasks</h3>
+        <br>
+        <c:if test="${not empty error}">
+            <div class="alert alert-warning" role="alert">
+                ${error}
+            </div>
+        </c:if>
+
+        <button class="btn btn-primary" onclick="showTask()">Show</button>
+
+        <div>
+            <ul class="list-group">
+                <table class="table table-hover table-bordered w-auto">
+                    <thead class="thead-light">
+                    <tr>
+                        <th scope="col">#id</th>
+                        <th scope="col">Name</th>
+                        <th scope="col"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach items="${civilizationsList}" var="item">
+                        <tr>
+                            <td class="align-middle">${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <a class="btn btn-outline-primary btn-sm my-0"
+                                           href="/civilizations/${item.id}" role="button">View</a>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <form method="post" action="/civilizations/${item.id}" class="mb-0">
+                                            <input type="hidden" name="_method" value="DELETE"/>
+                                            <button type="submit" class="btn btn-primary btn-sm my-0">Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    </tbody>
+                </table>
+
+                <form action="/civilizations/form" method="get">
+                    <button type="submit" class="btn btn-secondary ">Add Task</button>
+                </form>
+
+            </ul>
+
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    function getTask() {
+        return fetch('http://localhost:8085/api/v1/robots/json'
+            ,{
+                method: 'GET', // *GET, POST, PUT, DELETE, etc.
+                mode: 'cors', // no-cors, cors, *same-origin
+                cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (myJson) {
+                console.log(JSON.stringify(myJson));
+                // alert(JSON.stringify(myJson));
+                return JSON.stringify(myJson);
+            }).catch();
+    }
+
+    function showTask() {
+        // getTask()
+        //     .then(function (myJson) {
+        //     console.log(JSON.stringify(myJson));
+        //     alert(JSON.stringify(myJson));
+        // });
+        var sss = getTask();
+        alert(sss);
+    }
+
+    // document.addEventListener("DOMContentLoaded", getTask);
+</script>
+</html>

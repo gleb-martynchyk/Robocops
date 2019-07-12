@@ -1,10 +1,10 @@
 package org.jazzteam.martynchyk.tasks;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.jazzteam.martynchyk.IdGenerator;
+import org.jazzteam.martynchyk.exception.ExecutionDoneTask;
 import org.jazzteam.martynchyk.robots.Report;
 
 import java.util.Date;
@@ -20,6 +20,15 @@ public class BaseTask implements Task {
     private TaskPriority taskPriority;
     private TaskStatus status;
     private Date createDate;
+
+    public synchronized TaskStatus getStatus() {
+        return status;
+    }
+
+    public synchronized void setStatus(TaskStatus status) {
+        this.status = status;
+    }
+
     private int difficultyMilliseconds;
 
     public BaseTask() {
@@ -39,15 +48,19 @@ public class BaseTask implements Task {
     }
 
     @Override
-    public Report execute() {
+    public synchronized Report execute() {
+        this.setStatus(TaskStatus.INPROCESS);
         Report report = new Report();
         report.setStartDate(new Date());
         report.setTask(this);
-        this.setStatus(TaskStatus.INPROCESS);
         try {
             TimeUnit.MILLISECONDS.sleep(difficultyMilliseconds);
         } catch (InterruptedException e) {
-            System.out.println("Was interrupted");
+            e.printStackTrace();
+        }
+        if (this.getStatus().equals(TaskStatus.DONE)) {
+            System.out.println("Ошибка, таск выполняется во второй раз");
+            throw new ExecutionDoneTask();
         }
         this.setStatus(TaskStatus.DONE);
         report.setEndDate(new Date());
@@ -61,13 +74,26 @@ public class BaseTask implements Task {
         BaseTask task = (BaseTask) o;
         return id == task.id &&
                 difficultyMilliseconds == task.difficultyMilliseconds &&
+                Objects.equals(description, task.description) &&
                 taskPriority == task.taskPriority &&
                 status == task.status &&
-                createDate.equals(task.createDate);
+                Objects.equals(createDate, task.createDate);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, description, taskPriority, status, createDate, difficultyMilliseconds);
+    }
+
+    @Override
+    public String toString() {
+        return "BaseTask{" +
+                "id=" + id +
+                ", description='" + description + '\'' +
+                ", taskPriority=" + taskPriority +
+                ", status=" + status +
+                ", createDate=" + createDate +
+                ", difficultyMilliseconds=" + difficultyMilliseconds +
+                '}';
     }
 }

@@ -1,6 +1,8 @@
 package org.jazzteam.martynchyk.service;
 
-import org.jazzteam.martynchyk.config.RobotServiceConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jazzteam.martynchyk.config.RobotsServiceConfig;
 import org.jazzteam.martynchyk.config.TaskServiceConfig;
 import org.jazzteam.martynchyk.robots.BaseRobot;
 import org.jazzteam.martynchyk.robots.Report;
@@ -13,9 +15,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -24,19 +28,19 @@ import static org.testng.AssertJUnit.assertEquals;
 
 
 @WebAppConfiguration
-@ContextConfiguration(classes = {TaskServiceConfig.class, RobotServiceConfig.class})
+@ContextConfiguration(classes = {TaskServiceConfig.class, RobotsServiceConfig.class})
 public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
 
     @Autowired
     private TaskService taskService;
     @Autowired
     private RobotsService robotsService;
+    private static Logger log = LogManager.getLogger(RobotsService.class);
 
     @BeforeMethod
     public void setUp() {
         robotsService.getRobots().clear();
         robotsService.getRobotsReports().clear();
-        robotsService.getRobotsFutures().clear();
     }
 
     @Test
@@ -47,6 +51,13 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
     }
 
     @Test
+    public void testFindRobotById() {
+        BaseRobot robot = new BaseRobot();
+        robotsService.addRobot(robot);
+        assertEquals(robotsService.findRobotById(robot.getId()), robot);
+    }
+
+    @Test
     public void testRemoveRobot() {
         Robot robot = new BaseRobot();
         robotsService.addRobot(robot);
@@ -54,17 +65,18 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         assertFalse(robotsService.getRobots().contains(robot));
     }
 
-
-    //TODO доделать чтобы изменения сохранялись в бд
-    //TODO чтобы задачи распределялись равномерно
-    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
-    public void testStartExecution_TwoRobotsExecuteAllTasksFromsRobotsService(List<BaseTask> baseTasks) {
+    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute", invocationCount = 3)
+    public void testStartExecution_TwoRobotsExecuteAllTasksFromsRobotsService(List<BaseTask> baseTasks)
+            throws InterruptedException {
         int tasksToExecute = (int) baseTasks.stream()
                 .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
                 .count();
 
         BaseRobot robot1 = new BaseRobot();
         BaseRobot robot2 = new BaseRobot();
+        robotsService.setRobots(new HashSet<>());
+        robotsService.setRobotsReports(new ConcurrentHashMap<>());
+
         robotsService.addRobot(robot1);
         robotsService.addRobot(robot2);
         robotsService.startAllRobots();
@@ -76,27 +88,14 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
             taskService.create(task);
         }
 
-        //start method startExecution in other thread
-        Runnable task = robotsService::startExecution;
-        new Thread(task).start();
-        try {
-            TimeUnit.SECONDS.sleep(8);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        Runnable task = robotsService::sendAllTasks;
+        Thread thread=new Thread(task);
+        thread.start();
+        TimeUnit.MILLISECONDS.sleep(800);
+        robotsService.stopExecution();
+        robotsService.stopAllRobots();
+        //thread.interrupt();
 
-        //TODO нужно поставить таймер с циклом, чтобы ожидать меньше
-//        try {
-//            TimeUnit.MILLISECONDS.sleep(1000);
-//            while (robotsService.numberOfRunningTasks() != 0) {
-//                TimeUnit.MILLISECONDS.sleep(100);
-//            }
-//            robotsService.stopExecution();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-//        robotsService.startExecution();
 
         int doneTaskAmount = 0;
         for (Map.Entry<Robot, Set<Report>> robotReports : robotsService.getRobotsReports().entrySet()) {
@@ -106,10 +105,54 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         taskService.deleteMany(baseTasks.stream()
                 .map(BaseTask::getId)
                 .collect(Collectors.toCollection(ArrayList::new)));
+        if (tasksToExecute < doneTaskAmount) {
+            log.error("отчетов больше чем нужно, роботов:" + robotsService.getRobots().size());
+            log.info(robotsService.getRobotsReports());
+        }
 
+        if (tasksToExecute != doneTaskAmount) {
+            log.error("что-то пошло не так");
+        }
         assertEquals(tasksToExecute, doneTaskAmount);
     }
 
+    @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute", invocationCount = 3)
+    public void testStartExecution_FillsTheQueue(List<BaseTask> baseTasks) throws InterruptedException {
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
+        BaseRobot robot1 = new BaseRobot();
+        BaseRobot robot2 = new BaseRobot();
+        robotsService.getRobots().clear();
+        robotsService.getRobotsReports().clear();
+
+        robotsService.addRobot(robot1);
+        robotsService.addRobot(robot2);
+
+        for (BaseTask task : baseTasks) {
+            task.setDifficultyMilliseconds(1);
+            robot1.getAllowedTasks().add(task.getClass());
+            robot2.getAllowedTasks().add(task.getClass());
+            taskService.create(task);
+        }
+
+        Runnable task = robotsService::sendAllTasks;
+        new Thread(task).start();
+        TimeUnit.MILLISECONDS.sleep(300);
+        robotsService.stopExecution();
+
+        int queuesSize = 0;
+        for (Robot robot : robotsService.getRobots()) {
+            queuesSize += ((BaseRobot) robot).getTaskQueue().size();
+        }
+
+        taskService.deleteMany(baseTasks.stream()
+                .map(BaseTask::getId)
+                .collect(Collectors.toCollection(ArrayList::new)));
+
+        assertEquals(tasksToExecute, queuesSize);
+    }
 
     @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
     public void testCollectReports(List<BaseTask> baseTasks) {
@@ -142,14 +185,14 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotsService.collectReports();
 
         if (robot1Queue.isEmpty()) {
-            assertFalse(robotsService.getRobotsFutures().containsKey(robot1));
+            assertFalse(robotsService.getRobotsReports().containsKey(robot1));
         } else {
-            assertEquals(robotsService.getRobotsFutures().get(robot1), robot1.getFutureReports());
+            assertEquals(robotsService.getRobotsReports().get(robot1), robot1.getReports());
         }
         if (robot2Queue.isEmpty()) {
-            assertFalse(robotsService.getRobotsFutures().containsKey(robot2));
+            assertFalse(robotsService.getRobotsReports().containsKey(robot2));
         } else {
-            assertEquals(robotsService.getRobotsFutures().get(robot2), robot2.getFutureReports());
+            assertEquals(robotsService.getRobotsReports().get(robot2), robot2.getReports());
         }
     }
 
@@ -196,10 +239,19 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         assertFalse(taskResults.containsValue(false));
     }
 
-// TODO потом дописать
-//    @Test
-//    public void testStopExecution() {
-//    }
+    // TODO потом дописать
+    @Test
+    @Ignore
+    public void testStopExecution() {
+        Thread thread = robotsService.startExecutionInThread();
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        robotsService.stopExecution();
+        assertFalse(thread.isAlive());
+    }
 
     @Test
     public void testSendTask() {

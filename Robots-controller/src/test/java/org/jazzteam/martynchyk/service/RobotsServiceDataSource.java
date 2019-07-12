@@ -16,37 +16,37 @@ public class RobotsServiceDataSource {
 //                first element need to be expected
 
                 Collections.singletonList(
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0))
+                        new BaseTask("01", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0))
                 ),
                 Arrays.asList(
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.DONE, new Date(3)),
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(4))
+                        new BaseTask("11", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
+                        new BaseTask("12", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("13", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
+                        new BaseTask("14", TaskPriority.MIDDLE, TaskStatus.DONE, new Date(3)),
+                        new BaseTask("15", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(4))
                 ),
                 Arrays.asList(
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(5)),
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.ASSIGNED, new Date(0))
+                        new BaseTask("21", TaskPriority.HIGH, TaskStatus.CREATED, new Date(5)),
+                        new BaseTask("22", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("23", TaskPriority.HIGH, TaskStatus.ASSIGNED, new Date(0))
                 ),
                 Arrays.asList(
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.ASSIGNED, new Date(0))
+                        new BaseTask("31", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("32", TaskPriority.LOW, TaskStatus.ASSIGNED, new Date(0))
                 ),
                 Arrays.asList(
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.ASSIGNED, new Date(1))
+                        new BaseTask("41", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
+                        new BaseTask("42", TaskPriority.LOW, TaskStatus.ASSIGNED, new Date(1))
                 ),
                 Arrays.asList(
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
-                        new BaseTask("", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(3)),
-                        new BaseTask("", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(4))
+                        new BaseTask("51", TaskPriority.LOW, TaskStatus.CREATED, new Date(0)),
+                        new BaseTask("52", TaskPriority.LOW, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("53", TaskPriority.LOW, TaskStatus.CREATED, new Date(2)),
+                        new BaseTask("54", TaskPriority.HIGH, TaskStatus.ASSIGNED, new Date(0)),
+                        new BaseTask("55", TaskPriority.HIGH, TaskStatus.CREATED, new Date(1)),
+                        new BaseTask("56", TaskPriority.HIGH, TaskStatus.CREATED, new Date(2)),
+                        new BaseTask("57", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(3)),
+                        new BaseTask("58", TaskPriority.MIDDLE, TaskStatus.CREATED, new Date(4))
                 ),
         };
     }

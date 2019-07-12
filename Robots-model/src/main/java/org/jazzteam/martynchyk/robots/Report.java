@@ -15,5 +15,6 @@ public class Report {
     private Robot executor;
 
     public Report() {
+        startDate = new Date();
     }
 }

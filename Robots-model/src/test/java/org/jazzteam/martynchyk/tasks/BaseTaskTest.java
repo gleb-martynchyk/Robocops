@@ -1,5 +1,6 @@
 package org.jazzteam.martynchyk.tasks;
 
+import org.jazzteam.martynchyk.exception.ExecutionDoneTask;
 import org.jazzteam.martynchyk.robots.Report;
 import org.jazzteam.martynchyk.tasks.implementation.PatrolCityTask;
 import org.jazzteam.martynchyk.tasks.implementation.PatrolRoadsAndHighwaysTask;
@@ -14,7 +15,7 @@ public class BaseTaskTest {
 
 
     @Test
-    public void testExecuteTaskReturnReport() {
+    public void testExecuteTaskReturnReport() throws ExecutionDoneTask {
         task = new PatrolRoadsAndHighwaysTask();
         task.setTaskPriority(TaskPriority.LOW);
         task.setDescription("Patrol the city");
@@ -22,7 +23,7 @@ public class BaseTaskTest {
     }
 
     @Test
-    public void testExecuteTaskChangeStatus() {
+    public void testExecuteTaskChangeStatus() throws ExecutionDoneTask {
         task = new PatrolCityTask();
         task.setTaskPriority(TaskPriority.LOW);
         task.setDescription("Patrol the city");
@@ -31,7 +32,7 @@ public class BaseTaskTest {
     }
 
     @Test
-    public void testExecuteTaskReportFieldsNotNull() {
+    public void testExecuteTaskReportFieldsNotNull() throws ExecutionDoneTask {
         task = new PatrolCityTask();
         task.setTaskPriority(TaskPriority.LOW);
         task.setDescription("Patrol the city");

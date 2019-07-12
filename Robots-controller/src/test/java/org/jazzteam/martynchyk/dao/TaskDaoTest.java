@@ -14,6 +14,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static org.testng.Assert.assertNull;
@@ -119,6 +120,19 @@ public class TaskDaoTest extends AbstractTestNGSpringContextTests {
         taskDao.update(expectedTask);
         BaseTask actualTask = taskDao.findById(expectedTask.getId());
         assertEquals(actualTask, expectedTask);
+        taskDao.deleteById(expectedTask.getId());
+    }
+
+    @Test
+    public void testUpdate_UpdateStatus() {
+        expectedTask = new BaseTask("1", TaskPriority.HIGH, TaskStatus.CREATED, new Date(0));
+        taskDao.create(expectedTask);
+
+        BaseTask task = taskDao.findById(expectedTask.getId());
+        task.setStatus(TaskStatus.ASSIGNED);
+        taskDao.update(task);
+        BaseTask actualTask = taskDao.findById(expectedTask.getId());
+        assertEquals(actualTask.getStatus(), TaskStatus.ASSIGNED);
         taskDao.deleteById(expectedTask.getId());
     }
 

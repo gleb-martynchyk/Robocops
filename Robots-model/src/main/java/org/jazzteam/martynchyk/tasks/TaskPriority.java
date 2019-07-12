@@ -14,4 +14,11 @@ public enum TaskPriority {
     public int getPriority() {
         return priority;
     }
+
+    @Override
+    public String toString() {
+        return "TaskPriority{" +
+                "priority=" + priority +
+                "} " + super.toString();
+    }
 }

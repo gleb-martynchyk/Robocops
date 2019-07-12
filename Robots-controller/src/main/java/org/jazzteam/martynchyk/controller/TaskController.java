@@ -40,6 +40,19 @@ public class TaskController {
         return taskService.create(task);
     }
 
+    @PutMapping
+    @ResponseStatus(HttpStatus.OK)
+    public BaseTask updateTask(@RequestBody BaseTask task) {
+        taskService.update(task);
+        return taskService.findById(task.getId());
+    }
+
+    @DeleteMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteTask(@PathVariable("id") Long id) {
+        taskService.deleteById(id);
+    }
+
 
     @GetMapping(path = "json")
     public BaseTask get() {

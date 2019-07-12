@@ -11,12 +11,9 @@ import org.testng.annotations.Test;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 
@@ -76,7 +73,7 @@ public class BaseRobotTest {
     }
 
     @Test(timeOut = 1500)
-    public void testExecuteTaskInMultiThread() {
+    public void testStartExecution_ParallelExecuteTasks() {
         BaseRobot robot1 = new BaseRobot();
         BaseTask task1 = new GuardTask();
 
@@ -89,54 +86,50 @@ public class BaseRobotTest {
         task.setDifficultyMilliseconds(1000);
         task1.setDifficultyMilliseconds(1000);
 
-        Future<Report> future1 = robot.executeTaskFromQueueMultiThread();
-        Future<Report> future2 = robot1.executeTaskFromQueueMultiThread();
-        Report report = null;
-        Report report1 = null;
+        robot.startExecution();
+        robot1.startExecution();
 
         try {
-            report = future1.get();
-            report1 = future2.get();
+            TimeUnit.MILLISECONDS.sleep(1050);
         } catch (InterruptedException e) {
             e.printStackTrace();
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
+        robot.stopExecution();
+        robot1.stopExecution();
 
-        assertEquals(report.getStartDate().getTime(), report1.getStartDate().getTime(), 50);
+        Report report = robot.getReports().iterator().next();
+        Report report1 = robot1.getReports().iterator().next();
+
+        assertEquals((double) report.getStartDate().getTime(), (double) report1.getStartDate().getTime(), 10);
     }
 
     @Test
-    public void testExecuteTaskCantExecuteTwoTasksAtOneMoment() {
+    public void testStartExecution_CantExecuteTwoTasksAtOneMoment() {
         BaseTask task1 = new GuardTask();
         robot.getAllowedTasks().add(task.getClass());
         robot.addTask(task);
         robot.addTask(task1);
 
-        task.setDifficultyMilliseconds(2000);
-        task1.setDifficultyMilliseconds(3000);
+        task.setDifficultyMilliseconds(200);
+        task1.setDifficultyMilliseconds(300);
 
-        Future<Report> future1 = robot.executeTaskFromQueueMultiThread();
-        Future<Report> future2 = robot.executeTaskFromQueueMultiThread();
-        Report report = null;
-        Report report1 = null;
+        robot.startExecution();
 
         try {
-            report = future1.get();
-            report1 = future2.get();
+            TimeUnit.MILLISECONDS.sleep(600);
         } catch (InterruptedException e) {
             e.printStackTrace();
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
-        assertEquals(Math.abs(report.getEndDate().getTime() - report1.getEndDate().getTime()),
-                task1.getDifficultyMilliseconds(), 50);
+        robot.stopExecution();
+        Iterator reports = robot.getReports().iterator();
+        Report report = (Report) reports.next();
+        Report report1 = (Report) reports.next();
+
+        assertNotEquals((double) report.getStartDate().getTime(), (double) report1.getStartDate().getTime(), 10);
     }
 
     @Test
-    public void testExecuteTaskFromQueue_OneTaskInTwoRobots() {
+    public void testStartExecution_OneTaskInTwoRobots() {
         BaseRobot robot1 = new BaseRobot();
         task.setDifficultyMilliseconds(1000);
 
@@ -145,22 +138,22 @@ public class BaseRobotTest {
         robot1.getAllowedTasks().add(task.getClass());
         robot1.addTask(task);
 
-        Future<Report> future1 = robot.executeTaskFromQueueMultiThread();
-        Future<Report> future2 = robot1.executeTaskFromQueueMultiThread();
-        Report report1 = null;
-        Report report2 = null;
+        robot.startExecution();
+        robot1.startExecution();
 
         try {
-            report1 = future1.get();
-            report2 = future2.get();
+            TimeUnit.MILLISECONDS.sleep(1050);
         } catch (InterruptedException e) {
             e.printStackTrace();
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
-        boolean oneOfReportNotNull = report1 != null && report2 == null || report1 == null && report2 != null;
-        assertTrue(oneOfReportNotNull);
+        robot.stopExecution();
+        robot1.stopExecution();
+
+        boolean report = robot.getReports().iterator().hasNext();
+        boolean report1 = robot1.getReports().iterator().hasNext();
+
+        boolean result = report && !report1 || !report && report1;
+        assertTrue(result);
     }
 
     @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
@@ -182,47 +175,19 @@ public class BaseRobotTest {
 
     @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
     public void testExecuteAllFromQueue_CollectReports(List<BaseTask> baseTasks) {
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
         for (BaseTask task : baseTasks) {
             task.setDifficultyMilliseconds(1);
             robot.getAllowedTasks().add(task.getClass());
             robot.addTask(task);
         }
 
-        int tasksToExecute = (int) baseTasks.stream()
-                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
-                .count();
-
         robot.executeAllFromQueue();
 
-        int futuresAmount = robot.getFutureReports().size();
-
-        assertEquals(futuresAmount, tasksToExecute);
-    }
-
-    //TODO слишком долго выполняется
-    @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
-    public void testStartExecution_CollectReports(List<BaseTask> baseTasks) {
-        int tasksToExecute = (int) baseTasks.stream()
-                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
-                .count();
-
-        for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
-            robot.getAllowedTasks().add(task.getClass());
-            if (robot.addTask(task))
-                task.setStatus(TaskStatus.ASSIGNED);
-        }
-
-        robot.startExecution();
-
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        int futuresAmount = robot.getFutureReports().size();
-
+        int futuresAmount = robot.getReports().size();
         assertEquals(futuresAmount, tasksToExecute);
     }
 
@@ -238,7 +203,34 @@ public class BaseRobotTest {
 
         robot.executeAllFromQueue();
 
-        assertEquals(robot.getFutureReports().size(), 2);
+        assertEquals(robot.getReports().size(), 2);
+    }
+
+    //TODO слишком долго выполняется
+    @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
+    public void testStartExecution_CollectReports(List<BaseTask> baseTasks) {
+        int tasksToExecute = (int) baseTasks.stream()
+                .filter(baseTask -> baseTask.getStatus().equals(TaskStatus.CREATED))
+                .count();
+
+        for (BaseTask task : baseTasks) {
+            task.setDifficultyMilliseconds(1);
+            robot.getAllowedTasks().add(task.getClass());
+            robot.addTask(task);
+        }
+
+        robot.startExecution();
+
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        robot.stopExecution();
+
+        int futuresAmount = robot.getReports().size();
+
+        assertEquals(futuresAmount, tasksToExecute);
     }
 
 }
