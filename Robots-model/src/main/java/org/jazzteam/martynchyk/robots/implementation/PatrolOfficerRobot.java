@@ -1,4 +1,8 @@
 package org.jazzteam.martynchyk.robots.implementation;
 
-public class PatrolOfficerRobot {
+import org.jazzteam.martynchyk.robots.BaseRobot;
+
+public class PatrolOfficerRobot extends BaseRobot {
+    public PatrolOfficerRobot() {
+    }
 }

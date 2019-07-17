@@ -66,6 +66,4 @@ public class TaskDao implements BaseDao<BaseTask> {
     public void deleteMany(List<Long> ids) {
         getCollection().deleteMany(in("_id", ids));
     }
-
-
 }

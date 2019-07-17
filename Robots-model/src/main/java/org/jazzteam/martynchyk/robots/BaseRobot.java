@@ -28,14 +28,9 @@ public class BaseRobot implements Robot {
     private Set<Report> reports;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private static Logger log = LogManager.getLogger(BaseRobot.class);
-    private int i = 0;
 
     public synchronized Set<Report> getReports() {
         return reports;
-    }
-
-    public synchronized void setReports(Set<Report> reports) {
-        this.reports = reports;
     }
 
     public BaseRobot() {
@@ -43,6 +38,7 @@ public class BaseRobot implements Robot {
         //TODO можно будет убрать
         taskQueue = new ConcurrentLinkedQueue<>();
         allowedTasks = new HashSet<>();
+        allowedTasks.add(BaseTask.class);
         reports = new HashSet<>();
     }
 
@@ -61,7 +57,12 @@ public class BaseRobot implements Robot {
 
     @Override
     public void startExecution() {
+        if (running.get()){
+            log.info("execution already started");
+            return;
+        }
         running.set(true);
+        log.info("execution started");
         new Thread(() -> {
             while (running.get()) {
                 executeAllFromQueue();
@@ -76,6 +77,7 @@ public class BaseRobot implements Robot {
 
     @Override
     public void stopExecution() {
+        log.info("execution stopped");
         running.set(false);
     }
 
@@ -143,7 +145,6 @@ public class BaseRobot implements Robot {
                 ", allowedTasks=" + allowedTasks +
                 ", reports=" + reports +
                 ", running=" + running +
-                ", i=" + i +
                 '}';
     }
 }

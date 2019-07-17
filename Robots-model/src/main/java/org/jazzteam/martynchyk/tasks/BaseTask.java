@@ -20,6 +20,7 @@ public class BaseTask implements Task {
     private TaskPriority taskPriority;
     private TaskStatus status;
     private Date createDate;
+    private int difficulty;
 
     public synchronized TaskStatus getStatus() {
         return status;
@@ -29,14 +30,12 @@ public class BaseTask implements Task {
         this.status = status;
     }
 
-    private int difficultyMilliseconds;
-
     public BaseTask() {
         id = IdGenerator.generateUniqueId();
         taskPriority = TaskPriority.LOW;
         status = TaskStatus.CREATED;
         createDate = new Date();
-        difficultyMilliseconds = 3000;
+        difficulty = 3000;
     }
 
     public BaseTask(String description, TaskPriority taskPriority, TaskStatus status, Date createDate) {
@@ -54,7 +53,7 @@ public class BaseTask implements Task {
         report.setStartDate(new Date());
         report.setTask(this);
         try {
-            TimeUnit.MILLISECONDS.sleep(difficultyMilliseconds);
+            TimeUnit.MILLISECONDS.sleep(difficulty);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -73,7 +72,7 @@ public class BaseTask implements Task {
         if (o == null || getClass() != o.getClass()) return false;
         BaseTask task = (BaseTask) o;
         return id == task.id &&
-                difficultyMilliseconds == task.difficultyMilliseconds &&
+                difficulty == task.difficulty &&
                 Objects.equals(description, task.description) &&
                 taskPriority == task.taskPriority &&
                 status == task.status &&
@@ -82,7 +81,7 @@ public class BaseTask implements Task {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, description, taskPriority, status, createDate, difficultyMilliseconds);
+        return Objects.hash(id, description, taskPriority, status, createDate, difficulty);
     }
 
     @Override
@@ -93,7 +92,7 @@ public class BaseTask implements Task {
                 ", taskPriority=" + taskPriority +
                 ", status=" + status +
                 ", createDate=" + createDate +
-                ", difficultyMilliseconds=" + difficultyMilliseconds +
+                ", difficulty=" + difficulty +
                 '}';
     }
 }

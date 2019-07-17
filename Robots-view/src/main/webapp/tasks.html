@@ -1,101 +1,85 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:c="http://www.w3.org/1999/XSL/Transform">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Tasks</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="tasks.js"></script>
+    <script src="robots.js"></script>
+    <script src="http-requests.js"></script>
 </head>
 <body>
 <div class="container mt-5">
-
-    <div class="my-auto">
-
-        <h3>Tasks</h3>
-        <br>
-        <c:if test="${not empty error}">
-            <div class="alert alert-warning" role="alert">
-                ${error}
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="row">
+                <h3>Robots</h3>
+                <div class="col-sm-1">
+                    <button type="button" onclick="startAllRobots()"
+                            class="btn btn-secondary btn-sm">Start</button>
+                </div>
+                <div class="col-sm-1">
+                    <button type="button" onclick="stopAllRobots()"
+                            class="btn btn-secondary btn-sm">Stop</button>
+                </div>
             </div>
-        </c:if>
-
-        <button class="btn btn-primary" onclick="showTask()">Show</button>
-
-        <div>
-            <ul class="list-group">
-                <table class="table table-hover table-bordered w-auto">
-                    <thead class="thead-light">
-                    <tr>
-                        <th scope="col">#id</th>
-                        <th scope="col">Name</th>
-                        <th scope="col"></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <c:forEach items="${civilizationsList}" var="item">
-                        <tr>
-                            <td class="align-middle">${item.id}</td>
-                            <td>${item.name}</td>
-                            <td>
-                                <div class="row">
-                                    <div class="col-sm-3">
-                                        <a class="btn btn-outline-primary btn-sm my-0"
-                                           href="/civilizations/${item.id}" role="button">View</a>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <form method="post" action="/civilizations/${item.id}" class="mb-0">
-                                            <input type="hidden" name="_method" value="DELETE"/>
-                                            <button type="submit" class="btn btn-primary btn-sm my-0">Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                    </tbody>
-                </table>
-
-                <form action="/civilizations/form" method="get">
-                    <button type="submit" class="btn btn-secondary ">Add Task</button>
-                </form>
-
-            </ul>
-
-            </table>
+            <div id="table-robots" class="my-2"></div>
+            <a href="task-form.html" class="btn btn-primary disabled" role="button">Add Robot</a>
+            <div class="my-2">
+                <div class="header-line">
+                    <h3>Robots service</h3>
+                    <span>Status</span>
+                </div>
+                <div id="robots-service-status"></div>
+                <button type="button" onclick="startRobotsServiceExecution()"
+                        class="btn btn-secondary btn-sm">Start</button>
+                <button type="button" onclick="stopRobotsServiceExecution()"
+                        class="btn btn-secondary btn-sm">Stop</button>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <h3>Tasks</h3>
+            <div id="like_button_container"></div>
+            <div id="table-task"></div>
+            <a href="task-form.html" class="btn btn-primary disabled" role="button">Add Task</a>
         </div>
     </div>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Select robot to execute task</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    list of robots
+                    <script>
+                        getAllRobot().then((data) => {
+                            ReactDOM.render(toRobotTable(data), document.querySelector('#modal-body'));
+                        });
+                    </script>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary " disabled>Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+<script src="task-table.js"></script>
+<script src="robot-table.js"></script>
 </body>
-<script>
-    function getTask() {
-        return fetch('http://localhost:8085/api/v1/robots/json'
-            ,{
-                method: 'GET', // *GET, POST, PUT, DELETE, etc.
-                mode: 'cors', // no-cors, cors, *same-origin
-                cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-            })
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (myJson) {
-                console.log(JSON.stringify(myJson));
-                // alert(JSON.stringify(myJson));
-                return JSON.stringify(myJson);
-            }).catch();
-    }
-
-    function showTask() {
-        // getTask()
-        //     .then(function (myJson) {
-        //     console.log(JSON.stringify(myJson));
-        //     alert(JSON.stringify(myJson));
-        // });
-        var sss = getTask();
-        alert(sss);
-    }
-
-    // document.addEventListener("DOMContentLoaded", getTask);
-</script>
 </html>

@@ -83,8 +83,8 @@ public class BaseRobotTest {
         robot1.getAllowedTasks().add(task1.getClass());
         robot1.addTask(task1);
 
-        task.setDifficultyMilliseconds(1000);
-        task1.setDifficultyMilliseconds(1000);
+        task.setDifficulty(1000);
+        task1.setDifficulty(1000);
 
         robot.startExecution();
         robot1.startExecution();
@@ -110,8 +110,8 @@ public class BaseRobotTest {
         robot.addTask(task);
         robot.addTask(task1);
 
-        task.setDifficultyMilliseconds(200);
-        task1.setDifficultyMilliseconds(300);
+        task.setDifficulty(200);
+        task1.setDifficulty(300);
 
         robot.startExecution();
 
@@ -131,7 +131,7 @@ public class BaseRobotTest {
     @Test
     public void testStartExecution_OneTaskInTwoRobots() {
         BaseRobot robot1 = new BaseRobot();
-        task.setDifficultyMilliseconds(1000);
+        task.setDifficulty(1000);
 
         robot.getAllowedTasks().add(task.getClass());
         robot.addTask(task);
@@ -159,7 +159,7 @@ public class BaseRobotTest {
     @Test(dataProviderClass = BaseRobotDataSource.class, dataProvider = "TasksToExecute")
     public void testExecuteAllFromQueue_OneExecuteAllTasks(List<BaseTask> baseTasks) {
         for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot.getAllowedTasks().add(task.getClass());
             robot.addTask(task);
         }
@@ -180,7 +180,7 @@ public class BaseRobotTest {
                 .count();
 
         for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot.getAllowedTasks().add(task.getClass());
             robot.addTask(task);
         }
@@ -198,8 +198,8 @@ public class BaseRobotTest {
         robot.addTask(task);
         robot.addTask(task1);
 
-        task.setDifficultyMilliseconds(1);
-        task1.setDifficultyMilliseconds(1);
+        task.setDifficulty(1);
+        task1.setDifficulty(1);
 
         robot.executeAllFromQueue();
 
@@ -214,7 +214,7 @@ public class BaseRobotTest {
                 .count();
 
         for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot.getAllowedTasks().add(task.getClass());
             robot.addTask(task);
         }

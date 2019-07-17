@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 @CrossOrigin(maxAge = 3600)
@@ -24,18 +26,6 @@ public class RobotsController {
     @ResponseStatus(HttpStatus.OK)
     public Robot get(@PathVariable("id") Long id) {
         return robotsService.findRobotById(id);
-    }
-
-    @GetMapping(path = "start-robots")
-    @ResponseStatus(HttpStatus.OK)
-    public void startAllRobots() {
-        robotsService.startAllRobots();
-    }
-
-    @GetMapping(path = "start-execution")
-    @ResponseStatus(HttpStatus.OK)
-    public void startExecution() {
-        robotsService.startExecution();
     }
 
     @GetMapping
@@ -69,5 +59,15 @@ public class RobotsController {
     @GetMapping(path = "json")
     public BaseRobot get() {
         return new BaseRobot();
+    }
+
+    @GetMapping(path = "jsons")
+    public List<BaseRobot> getJsons() {
+        return Arrays.asList(new BaseRobot(), new BaseRobot());
+    }
+
+    @GetMapping(path = "create")
+    public void createRobot() {
+        robotsService.addRobot(new BaseRobot());
     }
 }

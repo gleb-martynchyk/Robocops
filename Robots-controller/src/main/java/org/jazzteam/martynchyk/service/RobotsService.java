@@ -99,6 +99,11 @@ public class RobotsService {
     }
 
     public void startExecution() {
+        if (running.get()) {
+            log.info("execution already started");
+            return;
+        }
+        log.info("execution started");
         running.set(true);
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             if (taskService.hasNextToExecute()) {
@@ -139,6 +144,7 @@ public class RobotsService {
 
     public void stopExecution() {
         running.set(false);
+        log.info("execution stopped");
     }
 
     public void startAllRobots() {

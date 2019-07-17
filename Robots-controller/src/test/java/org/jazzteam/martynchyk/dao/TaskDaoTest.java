@@ -29,9 +29,8 @@ public class TaskDaoTest extends AbstractTestNGSpringContextTests {
     private TaskDao taskDao;
     private BaseTask expectedTask;
 
-
     @Test(dataProviderClass = TaskDaoDataSource.class, dataProvider = "TasksAndPriorityTask")
-    public void testFindParametrized(List<BaseTask> tasks) {
+    public void testFindNextToAssign(List<BaseTask> tasks) {
         for (BaseTask task : tasks) {
             taskDao.create(task);
         }

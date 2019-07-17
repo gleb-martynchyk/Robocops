@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="my-auto">
+
+        <h3>Creating task</h3>
+        <br>
+        <form>
+            <div class="form-group">
+                <label path="name">Description</label>
+                <input path="name" type="text" class="form-control"/>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label path="taskPriority">Priority</label>
+                    <input path="taskPriority" type="text" class="form-control" placeholder="LOW"/>
+                </div>
+                <div class="form-group col-md-4">
+                    <label path="taskPriority">Type</label>
+                    <input path="taskPriority" type="text" class="form-control" placeholder="Patrol"/>
+                </div>
+                <div class="form-group col-md-4">
+                    <label path="difficulty" for="inputFaith">Difficulty</label>
+                    <input path="difficulty" type="number" class="form-control" id="inputFaith" placeholder="5000"/>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+
+        <div class="col-md-4">
+            <a class="btn btn-secondary" href="tasks.html" role="button">Home</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

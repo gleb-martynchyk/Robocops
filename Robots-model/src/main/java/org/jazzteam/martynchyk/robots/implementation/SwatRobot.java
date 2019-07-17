@@ -1,4 +1,8 @@
 package org.jazzteam.martynchyk.robots.implementation;
 
-public class SwatRobot {
+import org.jazzteam.martynchyk.robots.BaseRobot;
+
+public class SwatRobot extends BaseRobot {
+    public SwatRobot() {
+    }
 }

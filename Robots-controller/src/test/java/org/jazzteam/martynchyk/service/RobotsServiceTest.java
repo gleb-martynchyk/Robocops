@@ -82,7 +82,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotsService.startAllRobots();
 
         for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot1.getAllowedTasks().add(task.getClass());
             robot2.getAllowedTasks().add(task.getClass());
             taskService.create(task);
@@ -94,6 +94,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         TimeUnit.MILLISECONDS.sleep(800);
         robotsService.stopExecution();
         robotsService.stopAllRobots();
+        //TODO Эта строка вызывает InterruptedException
         thread.interrupt();
 
 
@@ -127,7 +128,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         robotsService.addRobot(robot2);
 
         for (BaseTask task : baseTasks) {
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot1.getAllowedTasks().add(task.getClass());
             robot2.getAllowedTasks().add(task.getClass());
             taskService.create(task);
@@ -150,6 +151,20 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         assertEquals(tasksToExecute, queuesSize);
     }
 
+    // TODO потом дописать
+    @Ignore
+    @Test
+    public void testStopExecution() {
+        Thread thread = robotsService.startExecutionInThread();
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        robotsService.stopExecution();
+        assertFalse(thread.isAlive());
+    }
+
     @Test(dataProviderClass = RobotsServiceDataSource.class, dataProvider = "TasksToExecute")
     public void testCollectReports(List<BaseTask> baseTasks) {
         BaseRobot robot1 = new BaseRobot();
@@ -162,7 +177,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
 
         for (int i = 0; i < baseTasks.size(); i++) {
             BaseTask task = baseTasks.get(i);
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot1.getAllowedTasks().add(task.getClass());
             robot2.getAllowedTasks().add(task.getClass());
             if (i % 2 == 0) {
@@ -204,7 +219,7 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         Map<BaseTask, Boolean> taskResults = new HashMap<>();
         for (int i = 0; i < baseTasks.size(); i++) {
             BaseTask task = baseTasks.get(i);
-            task.setDifficultyMilliseconds(1);
+            task.setDifficulty(1);
             robot1.getAllowedTasks().add(task.getClass());
             robot2.getAllowedTasks().add(task.getClass());
             taskService.create(task);
@@ -233,20 +248,6 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
                 .collect(Collectors.toCollection(ArrayList::new)));
 
         assertFalse(taskResults.containsValue(false));
-    }
-
-    // TODO потом дописать
-    @Test
-    @Ignore
-    public void testStopExecution() {
-        Thread thread = robotsService.startExecutionInThread();
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        robotsService.stopExecution();
-        assertFalse(thread.isAlive());
     }
 
     @Test
@@ -298,9 +299,13 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
     public void testSendTaskToRobots_ReturnEmptySetWhenNoRobotsToExecute() {
         BaseTask task = new BaseTask();
         taskService.create(task);
-        Robot robot1 = new BaseRobot();
-        Robot robot2 = new BaseRobot();
-        Robot robot3 = new BaseRobot();
+        BaseRobot robot1 = new BaseRobot();
+        BaseRobot robot2 = new BaseRobot();
+        BaseRobot robot3 = new BaseRobot();
+        robot1.getAllowedTasks().clear();
+        robot2.getAllowedTasks().clear();
+        robot3.getAllowedTasks().clear();
+
         Set<Robot> robotSet = new HashSet<>();
         robotSet.add(robot1);
         robotSet.add(robot2);
@@ -317,7 +322,9 @@ public class RobotsServiceTest extends AbstractTestNGSpringContextTests {
         BaseRobot robot1 = new BaseRobot();
         robot1.getAllowedTasks().add(task.getClass());
         BaseRobot robot2 = new BaseRobot();
+        robot2.getAllowedTasks().clear();
         BaseRobot robot3 = new BaseRobot();
+        robot3.getAllowedTasks().clear();
 
         Set<Robot> robotSet = new HashSet<>();
         robotSet.add(robot1);

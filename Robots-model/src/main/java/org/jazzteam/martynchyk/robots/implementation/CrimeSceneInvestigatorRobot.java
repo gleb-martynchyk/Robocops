@@ -1,4 +1,8 @@
 package org.jazzteam.martynchyk.robots.implementation;
 
-public class CrimeSceneInvestigatorRobot {
+import org.jazzteam.martynchyk.robots.BaseRobot;
+
+public class CrimeSceneInvestigatorRobot extends BaseRobot {
+    public CrimeSceneInvestigatorRobot() {
+    }
 }

@@ -1,4 +1,8 @@
 package org.jazzteam.martynchyk.tasks.implementation;
 
-public class RoadAccidentInvestigationTask {
+import org.bson.codecs.pojo.annotations.BsonDiscriminator;
+import org.jazzteam.martynchyk.tasks.BaseTask;
+
+@BsonDiscriminator
+public class RoadAccidentInvestigationTask extends BaseTask {
 }
