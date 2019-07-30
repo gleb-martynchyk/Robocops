@@ -1,21 +1,21 @@
-const robotsController = 'http://localhost:8085/api/v1/robots/';
-const robotsServiceController = 'http://localhost:8085/api/v1/robots-service/';
-const tasksController = 'http://localhost:8085/api/v1/tasks/';
+const robotsControllerUrl = new URL('http://localhost:8085/api/v1/robots/');
+const robotsServiceControllerUrl = new URL('http://localhost:8085/api/v1/robots-service/');
+const tasksControllerUrl = new URL('http://localhost:8085/api/v1/tasks/');
 
 function startRobotsServiceExecution() {
-    get(robotsServiceController + 'start');
+    get(new URL('start', robotsServiceControllerUrl));
 }
 
 function stopRobotsServiceExecution() {
-    get(robotsServiceController + 'stop');
+    get(new URL('stop', robotsServiceControllerUrl));
 }
 
 function startAllRobots() {
-    get(robotsServiceController + 'robots/?command=start');
+    get(new URL('robots/?command=start', robotsServiceControllerUrl));
 }
 
 function stopAllRobots() {
-    get(robotsServiceController + 'robots/?command=stop');
+    get(new URL('robots/?command=stop', robotsServiceControllerUrl));
 }
 
 function get(link) {

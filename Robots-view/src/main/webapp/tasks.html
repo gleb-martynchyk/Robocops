@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-
     <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="tasks.js"></script>
     <script src="robots.js"></script>
     <script src="http-requests.js"></script>
+    <script src="start-stop-buttons.js"></script>
 </head>
 <body>
 <div class="container mt-5">
@@ -22,12 +22,8 @@
             <div class="row">
                 <h3>Robots</h3>
                 <div class="col-sm-1">
-                    <button type="button" onclick="startAllRobots()"
+                    <button type="button" id="start-robots" onclick="startStopRobots('start-robots')"
                             class="btn btn-secondary btn-sm">Start</button>
-                </div>
-                <div class="col-sm-1">
-                    <button type="button" onclick="stopAllRobots()"
-                            class="btn btn-secondary btn-sm">Stop</button>
                 </div>
             </div>
             <div id="table-robots" class="my-2"></div>
@@ -38,10 +34,8 @@
                     <span>Status</span>
                 </div>
                 <div id="robots-service-status"></div>
-                <button type="button" onclick="startRobotsServiceExecution()"
+                <button type="button" id="start-service" onclick="startStopService('start-service')"
                         class="btn btn-secondary btn-sm">Start</button>
-                <button type="button" onclick="stopRobotsServiceExecution()"
-                        class="btn btn-secondary btn-sm">Stop</button>
             </div>
         </div>
         <div class="col-sm-6">

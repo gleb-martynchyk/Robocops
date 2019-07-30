@@ -1,7 +1,7 @@
 function getAllRobot() {
     //fake data
-    // return fetch(robotsController + 'jsons'
-    return fetch(robotsController
+    // return fetch(robotsControllerUrl + 'jsons'
+    return fetch(robotsControllerUrl
         , {
             method: 'GET',
             mode: 'cors',

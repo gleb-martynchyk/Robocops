@@ -57,7 +57,7 @@ public class BaseRobot implements Robot {
 
     @Override
     public void startExecution() {
-        if (running.get()){
+        if (running.get()) {
             log.info("execution already started");
             return;
         }
@@ -70,6 +70,7 @@ public class BaseRobot implements Robot {
                     TimeUnit.MILLISECONDS.sleep(300);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    Thread.currentThread().interrupt();
                 }
             }
         }).start();
@@ -109,14 +110,14 @@ public class BaseRobot implements Robot {
                     nextTask = (BaseTask) taskQueue.poll();
                 } else return null;
             }
-            log.info(this.getId()%100+" - task started: "+ nextTask );
+            log.info(this.getId() % 100 + " - task started: " + nextTask);
             return executeTask(nextTask);
         }
     }
 
     public Report executeTask(Task task) {
         Report report = task.execute();
-        log.info(this.getId()%100+" - task complete: "+ ((BaseTask)task));
+        log.info(this.getId() % 100 + " - task complete: " + ((BaseTask) task));
         report.setExecutor(this);
         return report;
     }

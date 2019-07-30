@@ -1,7 +1,7 @@
 function getTask() {
     //fake data
-    // return fetch(tasksController + 'jsons'
-    return fetch(tasksController
+    // return fetch(tasksControllerUrl + 'jsons'
+    return fetch(tasksControllerUrl
         , {
             method: 'GET', // *GET, POST, PUT, DELETE, etc.
             mode: 'cors', // no-cors, cors, *same-origin
